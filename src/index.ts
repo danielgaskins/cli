@@ -11,7 +11,13 @@ import {
   handleScrapeCommand,
   handleMultiScrapeCommand,
   handleAllScrapeCommand,
+  handleScrapeExchangeCommand,
 } from './commands/scrape';
+import {
+  buildExchangeCalls,
+  handleExchangeDiscoverCommand,
+  handleExchangeRetrieveCommand,
+} from './commands/exchange';
 import { initializeConfig, updateConfig } from './utils/config';
 import { configure, viewConfig } from './commands/config';
 import { handleCreditUsageCommand } from './commands/credit-usage';
@@ -208,6 +214,13 @@ function parseWebhookOption(
   }
 
   return trimmed;
+}
+
+function collectRepeatable(
+  value: string,
+  previous: string[] | undefined
+): string[] {
+  return [...(previous ?? []), value];
 }
 
 function parseCommaList(raw: string | undefined): string[] | undefined {
@@ -416,6 +429,16 @@ function createScrapeCommand(): Command {
     .option('--actions <json>', 'JSON actions array to run during scrape')
     .option('--actions-file <path>', 'Path to JSON actions file')
     .option('--proxy <proxy>', 'Proxy mode for scraping (e.g., auto, basic)')
+    .option(
+      '--exchange <provider/capability>',
+      'Execute an Exchange capability instead of scraping a URL (repeatable, up to 10). Requires an API key on a team with Exchange access.',
+      collectRepeatable
+    )
+    .option(
+      '--options <json>',
+      'JSON options for the --exchange capability at the same position (repeatable)',
+      collectRepeatable
+    )
 
     .action(async (positionalArgs, options) => {
       // Collect URLs from positional args and --url option
@@ -435,6 +458,28 @@ function createScrapeCommand(): Command {
 
       // Remove duplicates
       urls = [...new Set(urls)];
+
+      // Exchange execution is url-less; the API rejects url + exchange together.
+      if (options.exchange && options.exchange.length > 0) {
+        if (urls.length > 0) {
+          console.error(
+            'Error: --exchange cannot be combined with a URL. Scrape a URL or execute Exchange capabilities, not both.'
+          );
+          process.exit(1);
+        }
+        await handleScrapeExchangeCommand(
+          options.exchange,
+          options.options ?? [],
+          {
+            apiKey: options.apiKey,
+            apiUrl: options.apiUrl,
+            output: options.output,
+            json: options.json,
+            pretty: options.pretty,
+          }
+        );
+        return;
+      }
 
       if (urls.length === 0) {
         console.error(
@@ -916,7 +961,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--sources <sources>',
-      'Comma-separated sources to search: web, images, news (default: web)'
+      'Comma-separated sources to search: web, images, news, exchange (default: web). exchange adds free Exchange capability hits (data providers, not documents) and needs an API key on a team with Exchange access; execute a hit with `firecrawl exchange retrieve`.'
     )
     .option(
       '--categories <categories>',
@@ -983,7 +1028,7 @@ function createSearchCommand(): Command {
           .map((s: string) => s.trim().toLowerCase()) as SearchSource[];
 
         // Validate sources
-        const validSources = ['web', 'images', 'news'];
+        const validSources = ['web', 'images', 'news', 'exchange'];
         for (const source of sources) {
           if (!validSources.includes(source)) {
             console.error(
@@ -1046,6 +1091,123 @@ function createSearchCommand(): Command {
     });
 
   return searchCmd;
+}
+
+/**
+ * Create and configure the exchange command group
+ */
+function createExchangeCommand(): Command {
+  const exchangeCmd = new Command('exchange')
+    .description(
+      'Discover and call Firecrawl Exchange data providers. Requires an API key on a team with Exchange access (no keyless fallback).'
+    )
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ firecrawl exchange discover                                    # cohorts
+  $ firecrawl exchange discover finance                            # providers in a cohort
+  $ firecrawl exchange discover finance fred                       # what a provider can do
+  $ firecrawl exchange discover finance fred finance/series/observations   # full contract
+  $ firecrawl exchange discover --query "balance sheet" --limit 8  # semantic lookup
+  $ firecrawl exchange retrieve fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'
+  $ firecrawl search "nvidia balance sheet" --sources web,exchange --json`
+    );
+
+  exchangeCmd
+    .command('discover')
+    .description(
+      'Browse the Exchange catalogue. No arguments lists cohorts; add a cohort, then a provider, then a capability address to read its full contract (options, returns, creditsCost). --query ranks capabilities semantically across the whole catalogue.'
+    )
+    .argument('[cohort]', 'Cohort slug, e.g. finance')
+    .argument('[provider]', 'Provider slug, e.g. fred')
+    .argument(
+      '[capability]',
+      'Capability address, e.g. finance/series/observations'
+    )
+    .option(
+      '-q, --query <text>',
+      'Semantic lookup across the whole catalogue (cannot be combined with path arguments)'
+    )
+    .option(
+      '--limit <number>',
+      'Maximum semantic hits (1-24, default: 8)',
+      parseInt
+    )
+    .option(
+      '--expand <tokens>',
+      'Inline more of the tree on a walk: capabilities, contracts, examples, all'
+    )
+    .option(
+      '-k, --api-key <key>',
+      'Firecrawl API key (overrides global --api-key)'
+    )
+    .option('--api-url <url>', 'API URL (overrides global --api-url)')
+    .option('-o, --output <path>', 'Output file path (default: stdout)')
+    .option('--json', 'Output as compact JSON', false)
+    .option('--pretty', 'Pretty print JSON output', false)
+    .action(async (cohort, provider, capability, options) => {
+      await handleExchangeDiscoverCommand({
+        cohort,
+        provider,
+        capability,
+        query: options.query,
+        limit: options.limit,
+        expand: options.expand,
+        apiKey: options.apiKey,
+        apiUrl: options.apiUrl,
+        output: options.output,
+        json: options.json,
+        pretty: options.pretty,
+      });
+    });
+
+  exchangeCmd
+    .command('retrieve')
+    .description(
+      'Execute one or more Exchange capabilities (up to 10) through /v2/scrape and print each result with its creditsCost. Read the contract first with `exchange discover`.'
+    )
+    .argument(
+      '<addresses...>',
+      'provider/capability addresses, e.g. fred/finance/series/observations'
+    )
+    .option(
+      '--options <json>',
+      'JSON options for the address at the same position (repeatable)',
+      collectRepeatable
+    )
+    .option('--timeout <ms>', 'Timeout in milliseconds', parseInt)
+    .option(
+      '-k, --api-key <key>',
+      'Firecrawl API key (overrides global --api-key)'
+    )
+    .option('--api-url <url>', 'API URL (overrides global --api-url)')
+    .option('-o, --output <path>', 'Output file path (default: stdout)')
+    .option('--json', 'Output as compact JSON', false)
+    .option('--pretty', 'Pretty print JSON output', false)
+    .action(async (addresses: string[], options) => {
+      let calls;
+      try {
+        calls = buildExchangeCalls(addresses, options.options);
+      } catch (error) {
+        console.error(
+          'Error:',
+          error instanceof Error ? error.message : 'Unknown error occurred'
+        );
+        process.exit(1);
+      }
+      await handleExchangeRetrieveCommand({
+        calls,
+        timeout: options.timeout,
+        apiKey: options.apiKey,
+        apiUrl: options.apiUrl,
+        output: options.output,
+        json: options.json,
+        pretty: options.pretty,
+      });
+    });
+
+  return exchangeCmd;
 }
 
 /**
@@ -2092,6 +2254,7 @@ program.addCommand(createMapCommand());
 program.addCommand(createParseCommand());
 program.addCommand(createMonitorCommand());
 program.addCommand(createSearchCommand());
+program.addCommand(createExchangeCommand());
 program.addCommand(createDeveloperCommand());
 program.addCommand(createResearchCommand());
 program.addCommand(createFeedbackCommand());

@@ -4,7 +4,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { executeSearch, handleSearchCommand } from '../../commands/search';
-import { getClient } from '../../utils/client';
+import { EXCHANGE_KEY_REQUIRED } from '../../commands/exchange';
+import { getClient, isKeylessMode } from '../../utils/client';
 import { initializeConfig } from '../../utils/config';
 import { writeOutput } from '../../utils/output';
 import { setupTest, teardownTest } from '../utils/mock-client';
@@ -17,6 +18,7 @@ vi.mock('../../utils/client', async () => {
   return {
     ...actual,
     getClient: vi.fn(),
+    isKeylessMode: vi.fn(() => false),
   };
 });
 
@@ -54,11 +56,135 @@ describe('executeSearch', () => {
     };
 
     vi.mocked(getClient).mockReturnValue(mockClient as any);
+    vi.mocked(isKeylessMode).mockReturnValue(false);
   });
 
   afterEach(() => {
     teardownTest();
     vi.clearAllMocks();
+  });
+
+  describe('Exchange source', () => {
+    const exchangeHit = {
+      provider: 'fred',
+      capability: 'finance/series/observations',
+      concept: 'series/observations',
+      cohorts: ['finance'],
+      creditsCost: 1,
+      similarity: 0.8123,
+    };
+
+    it('sends exchange as a bare source entry beside web', async () => {
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse({ web: [], exchange: [exchangeHit] })
+      );
+
+      await executeSearch({
+        query: 'nvidia balance sheet',
+        sources: ['web', 'exchange'],
+      });
+
+      expect(mockHttpPost).toHaveBeenCalledWith('/v2/search', {
+        query: 'nvidia balance sheet',
+        limit: undefined,
+        integration: 'cli',
+        sources: [{ type: 'web' }, { type: 'exchange' }],
+      });
+    });
+
+    it('passes data.exchange, id and creditsUsed through untouched', async () => {
+      const web = [{ url: 'https://example.com', title: 'Example' }];
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse(
+          { web, exchange: [exchangeHit] },
+          { id: 'search-1', creditsUsed: 0 }
+        )
+      );
+
+      const result = await executeSearch({
+        query: 'nvidia balance sheet',
+        sources: ['web', 'exchange'],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ web, exchange: [exchangeHit] });
+      expect(result.id).toBe('search-1');
+      expect(result.creditsUsed).toBe(0);
+    });
+
+    it('leaves data.exchange absent when the API omitted it', async () => {
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse({ web: [{ url: 'https://example.com' }] })
+      );
+
+      const result = await executeSearch({
+        query: 'nvidia balance sheet',
+        sources: ['web', 'exchange'],
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data).not.toHaveProperty('exchange');
+    });
+
+    it('refuses the exchange source in keyless mode before calling the API', async () => {
+      vi.mocked(isKeylessMode).mockReturnValue(true);
+
+      const result = await executeSearch({
+        query: 'nvidia balance sheet',
+        sources: ['web', 'exchange'],
+      });
+
+      expect(result).toEqual({ success: false, error: EXCHANGE_KEY_REQUIRED });
+      expect(mockHttpPost).not.toHaveBeenCalled();
+    });
+
+    it('prints an Exchange Providers section and labels the web group', async () => {
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse({
+          web: [{ url: 'https://example.com', title: 'Example' }],
+          exchange: [exchangeHit],
+        })
+      );
+
+      await handleSearchCommand({
+        query: 'nvidia balance sheet',
+        sources: ['web', 'exchange'],
+      });
+
+      const output = vi.mocked(writeOutput).mock.calls.at(-1)?.[0] as string;
+      expect(output).toContain('=== Web Results ===');
+      expect(output).toContain('=== Exchange Providers ===');
+      expect(output).toContain('fred/finance/series/observations');
+      expect(output).toContain('Concept: series/observations');
+      expect(output).toContain('Cohorts: finance');
+      expect(output).toContain('Credits per call: 1');
+      expect(output).toContain('Similarity: 0.8123');
+      expect(output).toContain(
+        'Contract: firecrawl exchange discover finance fred finance/series/observations'
+      );
+    });
+
+    it('treats exchange-only hits as results', async () => {
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse({ exchange: [exchangeHit] }, { creditsUsed: 0 })
+      );
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await handleSearchCommand({
+        query: 'cpi',
+        sources: ['exchange'],
+        json: true,
+      });
+
+      expect(logSpy).not.toHaveBeenCalledWith('No results found.');
+      const output = vi.mocked(writeOutput).mock.calls.at(-1)?.[0] as string;
+      expect(JSON.parse(output)).toEqual({
+        success: true,
+        data: { exchange: [exchangeHit] },
+        creditsUsed: 0,
+      });
+      logSpy.mockRestore();
+    });
   });
 
   describe('API call generation', () => {

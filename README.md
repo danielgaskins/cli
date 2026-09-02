@@ -215,29 +215,31 @@ firecrawl scrape https://firecrawl.dev https://firecrawl.dev/blog https://docs.f
 
 #### Scrape Options
 
-| Option                     | Description                                             |
-| -------------------------- | ------------------------------------------------------- |
-| `-f, --format <formats>`   | Output format(s), comma-separated                       |
-| `-H, --html`               | Shortcut for `--format html`                            |
-| `-S, --summary`            | Shortcut for `--format summary`                         |
-| `--only-main-content`      | Extract only main content (removes navs, footers, etc.) |
-| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)     |
-| `--screenshot`             | Take a screenshot                                       |
-| `--full-page-screenshot`   | Take a full page screenshot                             |
-| `--include-tags <tags>`    | Only include specific HTML tags                         |
-| `--exclude-tags <tags>`    | Exclude specific HTML tags                              |
-| `--max-age <milliseconds>` | Maximum age of cached content in milliseconds           |
-| `--lockdown`               | Enable lockdown mode for the scrape                     |
-| `--redact-pii`             | Redact personally identifiable information from output  |
-| `--schema <json>`          | JSON schema for structured extraction                   |
-| `--schema-file <path>`     | Path to JSON schema file for structured extraction      |
-| `--actions <json>`         | JSON actions array to run during scrape                 |
-| `--actions-file <path>`    | Path to JSON actions file                               |
-| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)  |
-| `-o, --output <path>`      | Save output to file                                     |
-| `--json`                   | Output as JSON format                                   |
-| `--pretty`                 | Pretty print JSON output                                |
-| `--timing`                 | Show request timing info                                |
+| Option                     | Description                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-f, --format <formats>`   | Output format(s), comma-separated                                                                                                           |
+| `-H, --html`               | Shortcut for `--format html`                                                                                                                |
+| `-S, --summary`            | Shortcut for `--format summary`                                                                                                             |
+| `--only-main-content`      | Extract only main content (removes navs, footers, etc.)                                                                                     |
+| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)                                                                                         |
+| `--screenshot`             | Take a screenshot                                                                                                                           |
+| `--full-page-screenshot`   | Take a full page screenshot                                                                                                                 |
+| `--include-tags <tags>`    | Only include specific HTML tags                                                                                                             |
+| `--exclude-tags <tags>`    | Exclude specific HTML tags                                                                                                                  |
+| `--max-age <milliseconds>` | Maximum age of cached content in milliseconds                                                                                               |
+| `--lockdown`               | Enable lockdown mode for the scrape                                                                                                         |
+| `--redact-pii`             | Redact personally identifiable information from output                                                                                      |
+| `--schema <json>`          | JSON schema for structured extraction                                                                                                       |
+| `--schema-file <path>`     | Path to JSON schema file for structured extraction                                                                                          |
+| `--actions <json>`         | JSON actions array to run during scrape                                                                                                     |
+| `--actions-file <path>`    | Path to JSON actions file                                                                                                                   |
+| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)                                                                                      |
+| `--exchange <address>`     | Execute an Exchange capability (`provider/capability`) instead of a URL; repeatable, up to 10. See [`exchange`](#exchange---data-providers) |
+| `--options <json>`         | JSON options for the `--exchange` address at the same position (repeatable)                                                                 |
+| `-o, --output <path>`      | Save output to file                                                                                                                         |
+| `--json`                   | Output as JSON format                                                                                                                       |
+| `--pretty`                 | Pretty print JSON output                                                                                                                    |
+| `--timing`                 | Show request timing info                                                                                                                    |
 
 #### Available Formats
 
@@ -299,6 +301,11 @@ firecrawl search "landscape photography" --sources images
 # Multiple sources
 firecrawl search "machine learning" --sources web,news,images
 
+# Add Exchange capability hits (data providers, not documents) beside web results.
+# Free, needs an API key on a team with Exchange access; execute a hit with
+# `firecrawl exchange retrieve`.
+firecrawl search "nvidia balance sheet" --sources web,exchange --json
+
 # Filter by category (GitHub, research-affiliated websites, PDFs)
 firecrawl search "web data python" --categories github
 firecrawl search "transformer architecture" --categories research
@@ -328,23 +335,23 @@ firecrawl search "AI data tools"
 
 #### Search Options
 
-| Option                       | Description                                                                                                                                                               |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                    |
-| `--sources <sources>`        | Comma-separated: `web`, `images`, `news` (default: web)                                                                                                                   |
-| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer` |
-| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                               |
-| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                 |
-| `--country <code>`           | ISO country code (default: US)                                                                                                                                            |
-| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                  |
-| `--highlights`               | Return query-relevant highlights for each result                                                                                                                          |
-| `--no-highlights`            | Keep the original search snippets                                                                                                                                         |
-| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                        |
-| `--scrape`                   | Enable scraping of search results                                                                                                                                         |
-| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                |
-| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                   |
-| `-o, --output <path>`        | Save to file                                                                                                                                                              |
-| `--json`                     | Output as compact JSON                                                                                                                                                    |
+| Option                       | Description                                                                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                     |
+| `--sources <sources>`        | Comma-separated: `web`, `images`, `news`, `exchange` (default: web). `exchange` returns capability hits in `data.exchange` -- see [`exchange`](#exchange---data-providers) |
+| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`  |
+| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                |
+| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                  |
+| `--country <code>`           | ISO country code (default: US)                                                                                                                                             |
+| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                   |
+| `--highlights`               | Return query-relevant highlights for each result                                                                                                                           |
+| `--no-highlights`            | Keep the original search snippets                                                                                                                                          |
+| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                         |
+| `--scrape`                   | Enable scraping of search results                                                                                                                                          |
+| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                 |
+| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                    |
+| `-o, --output <path>`        | Save to file                                                                                                                                                               |
+| `--json`                     | Output as compact JSON                                                                                                                                                     |
 
 #### Examples
 
@@ -373,6 +380,71 @@ firecrawl search "best coffee shops" --location "Berlin,Germany" --country DE
 # Get news from the past week
 firecrawl search "AI startups funding" --sources news --tbs qdr:w --limit 15
 ```
+
+---
+
+### `exchange` - Data providers
+
+Discover and call Firecrawl Exchange data providers (FRED, financial datasets,
+and more). Discovery is free; each `retrieve` spends the credits its contract
+declares. Exchange needs an API key on a team with Exchange access -- there is
+no keyless fallback, and the CLI refuses before sending anything.
+
+```bash
+# Walk the catalogue: cohorts -> providers -> capabilities -> one contract
+firecrawl exchange discover
+firecrawl exchange discover finance
+firecrawl exchange discover finance fred
+firecrawl exchange discover finance fred finance/series/observations
+
+# Inline the whole tree for a cohort
+firecrawl exchange discover finance --expand all --json
+
+# Semantic lookup across the whole catalogue
+firecrawl exchange discover --query "balance sheet" --limit 8
+
+# Execute a capability (reads the contract first to learn its options)
+firecrawl exchange retrieve fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'
+
+# Batch up to 10; each --options pairs with the address at the same position
+firecrawl exchange retrieve fred/finance/series/observations fred/finance/series/search \
+  --options '{"series_id":"CPIAUCSL"}' --options '{"q":"inflation"}' --json
+
+# Same execution through scrape (url-less)
+firecrawl scrape --exchange fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'
+
+# Find capabilities beside web results
+firecrawl search "nvidia balance sheet" --sources web,exchange --json
+```
+
+`retrieve` posts to `/v2/scrape` with an `exchange` array and prints each
+item with its `creditsCost` (`--json` mirrors the API envelope:
+`{ success, scrape_id, data: { exchange: [...], creditsCost } }`). A provider
+error inside the batch is reported per item and does not fail the request; the
+exit code is 1 only when every item failed, when the request itself was
+rejected (403 team not enabled, 402 insufficient credits, 409 duplicate
+request), or in keyless mode.
+
+#### `discover` Options
+
+| Option               | Description                                                                       |
+| -------------------- | --------------------------------------------------------------------------------- |
+| `[cohort]`           | Cohort slug (first rung), e.g. `finance`                                          |
+| `[provider]`         | Provider slug (second rung), e.g. `fred`                                          |
+| `[capability]`       | Capability address (third rung), e.g. `finance/series/observations`               |
+| `-q, --query <text>` | Semantic lookup across the whole catalogue (root only)                            |
+| `--limit <n>`        | Maximum semantic hits (1-24, default: 8)                                          |
+| `--expand <tokens>`  | Inline more of the tree on a walk: `capabilities`, `contracts`, `examples`, `all` |
+| `--json`, `--pretty` | Output the API payload as JSON                                                    |
+
+#### `retrieve` Options
+
+| Option               | Description                                                    |
+| -------------------- | -------------------------------------------------------------- |
+| `<addresses...>`     | One to ten `provider/capability` addresses                     |
+| `--options <json>`   | JSON options for the address at the same position (repeatable) |
+| `--timeout <ms>`     | Timeout in milliseconds                                        |
+| `--json`, `--pretty` | Output the `/v2/scrape` envelope as JSON                       |
 
 ---
 

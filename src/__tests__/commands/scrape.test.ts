@@ -3,7 +3,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { executeScrape } from '../../commands/scrape';
+import {
+  executeScrape,
+  handleScrapeExchangeCommand,
+} from '../../commands/scrape';
 import { getClient } from '../../utils/client';
 import { initializeConfig } from '../../utils/config';
 import { setupTest, teardownTest } from '../utils/mock-client';
@@ -482,5 +485,114 @@ describe('executeScrape', () => {
         integration: 'cli',
       });
     });
+  });
+});
+
+describe('handleScrapeExchangeCommand', () => {
+  let mockHttpPost: ReturnType<typeof vi.fn>;
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let stdoutSpy: ReturnType<typeof vi.spyOn>;
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setupTest();
+    initializeConfig({
+      apiKey: 'test-api-key',
+      apiUrl: 'https://api.firecrawl.dev',
+    });
+    mockHttpPost = vi.fn();
+    vi.mocked(getClient).mockReturnValue({
+      http: { post: mockHttpPost },
+    } as any);
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code: number) => {
+      throw new Error(`exit ${code}`);
+    }) as never);
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    stdoutSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    exitSpy.mockRestore();
+    errorSpy.mockRestore();
+    stdoutSpy.mockRestore();
+    stderrSpy.mockRestore();
+    teardownTest();
+    vi.clearAllMocks();
+  });
+
+  it('delegates --exchange to the url-less /v2/scrape executor', async () => {
+    mockHttpPost.mockResolvedValue({
+      data: {
+        success: true,
+        scrape_id: 'scrape-9',
+        data: {
+          exchange: [
+            {
+              provider: 'fred',
+              capability: 'finance/series/observations',
+              creditsCost: 1,
+              data: { observations: [] },
+            },
+          ],
+          creditsCost: 1,
+        },
+      },
+    });
+
+    await handleScrapeExchangeCommand(
+      ['fred/finance/series/observations'],
+      ['{"series_id":"CPIAUCSL"}'],
+      { apiKey: 'fc-key', apiUrl: 'http://localhost:3002', json: true }
+    );
+
+    expect(getClient).toHaveBeenCalledWith({
+      apiKey: 'fc-key',
+      apiUrl: 'http://localhost:3002',
+    });
+    expect(mockHttpPost).toHaveBeenCalledWith('/v2/scrape', {
+      exchange: [
+        {
+          provider: 'fred',
+          capability: 'finance/series/observations',
+          options: { series_id: 'CPIAUCSL' },
+        },
+      ],
+      integration: 'cli',
+    });
+    const written = stdoutSpy.mock.calls.at(-1)?.[0] as string;
+    expect(JSON.parse(written)).toEqual({
+      success: true,
+      scrape_id: 'scrape-9',
+      data: {
+        exchange: [
+          {
+            provider: 'fred',
+            capability: 'finance/series/observations',
+            creditsCost: 1,
+            data: { observations: [] },
+          },
+        ],
+        creditsCost: 1,
+      },
+    });
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('exits 1 on a malformed address without calling the API', async () => {
+    await expect(handleScrapeExchangeCommand(['fred'], [], {})).rejects.toThrow(
+      'exit 1'
+    );
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error:',
+      expect.stringContaining('provider/capability')
+    );
+    expect(mockHttpPost).not.toHaveBeenCalled();
   });
 });

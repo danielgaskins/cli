@@ -4,7 +4,7 @@
 
 import type { ScrapeFormat } from './scrape';
 
-export type SearchSource = 'web' | 'images' | 'news';
+export type SearchSource = 'web' | 'images' | 'news' | 'exchange';
 export type SearchCategory = 'github' | 'research' | 'pdf' | 'developer';
 
 export interface SearchOptions {
@@ -16,7 +16,7 @@ export interface SearchOptions {
   apiUrl?: string;
   /** Maximum number of results (default: 5, max: 100) */
   limit?: number;
-  /** Sources to search: web, images, news (default: web) */
+  /** Sources to search: web, images, news, exchange (default: web) */
   sources?: SearchSource[];
   /** Categories to filter results: github, research, pdf, developer */
   categories?: SearchCategory[];
@@ -111,12 +111,28 @@ export interface DeveloperSearchResult {
   category?: string;
 }
 
+/**
+ * One capability hit from the `exchange` source. These are catalogue matches,
+ * never documents: execute one with `firecrawl exchange retrieve
+ * <provider>/<capability>` after reading its contract via `exchange discover`.
+ */
+export interface ExchangeSearchResult {
+  provider: string;
+  capability: string;
+  concept?: string;
+  cohorts?: string[];
+  creditsCost?: number;
+  similarity?: number;
+}
+
 export interface SearchResultData {
   web?: WebSearchResult[];
   images?: ImageSearchResult[];
   news?: NewsSearchResult[];
   /** Present when the `developer` category is requested. */
   developer?: DeveloperSearchResult[];
+  /** Present when the `exchange` source is requested and the Exchange answered. */
+  exchange?: ExchangeSearchResult[];
 }
 
 export interface SearchResult {

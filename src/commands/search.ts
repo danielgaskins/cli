@@ -11,9 +11,11 @@ import type {
   ImageSearchResult,
   NewsSearchResult,
   DeveloperSearchResult,
+  ExchangeSearchResult,
 } from '../types/search';
 import { getClient, isKeylessMode, keylessRequest } from '../utils/client';
 import { writeOutput } from '../utils/output';
+import { assertExchangeKeyed } from './exchange';
 
 /**
  * Execute search command
@@ -34,6 +36,11 @@ export async function executeSearch(
 
     // Add sources if specified
     if (options.sources && options.sources.length > 0) {
+      // The exchange source is gated per team; the keyless tier has no team,
+      // so refuse here rather than surface an opaque 403.
+      if (options.sources.includes('exchange')) {
+        assertExchangeKeyed(options.apiKey, options.apiUrl);
+      }
       searchParams.sources = options.sources.map((source) => ({
         type: source,
       }));
@@ -128,6 +135,11 @@ export async function executeSearch(
     // results, so the API returns its hits in their own group.
     if (payload.developer)
       data.developer = payload.developer as DeveloperSearchResult[];
+    // Exchange hits are capability matches (never documents). The API omits
+    // the group entirely when the Exchange is unreachable, so pass it through
+    // exactly as received.
+    if (payload.exchange)
+      data.exchange = payload.exchange as ExchangeSearchResult[];
 
     return {
       success: true,
@@ -170,9 +182,11 @@ function formatSearchReadable(
     // Label the web group whenever another group follows it, so the reader can
     // tell the groups apart.
     const hasDeveloperResults = !!data.developer && data.developer.length > 0;
+    const hasExchangeResults = !!data.exchange && data.exchange.length > 0;
     if (
       (options.sources && options.sources.length > 1) ||
-      hasDeveloperResults
+      hasDeveloperResults ||
+      hasExchangeResults
     ) {
       lines.push('=== Web Results ===');
       lines.push('');
@@ -270,6 +284,38 @@ function formatSearchReadable(
     }
   }
 
+  // Format exchange capability hits
+  if (data.exchange && data.exchange.length > 0) {
+    if (lines.length > 0) {
+      lines.push('');
+    }
+    lines.push('=== Exchange Providers ===');
+    lines.push('');
+
+    for (const hit of data.exchange) {
+      lines.push(`${hit.provider}/${hit.capability}`);
+      if (hit.concept) {
+        lines.push(`  Concept: ${hit.concept}`);
+      }
+      if (hit.cohorts && hit.cohorts.length > 0) {
+        lines.push(`  Cohorts: ${hit.cohorts.join(', ')}`);
+      }
+      if (hit.creditsCost !== undefined) {
+        lines.push(`  Credits per call: ${hit.creditsCost}`);
+      }
+      if (hit.similarity !== undefined) {
+        lines.push(`  Similarity: ${hit.similarity}`);
+      }
+      const cohort = hit.cohorts?.[0];
+      if (cohort) {
+        lines.push(
+          `  Contract: firecrawl exchange discover ${cohort} ${hit.provider} ${hit.capability}`
+        );
+      }
+      lines.push('');
+    }
+  }
+
   return lines.join('\n');
 }
 
@@ -295,7 +341,8 @@ export async function handleSearchCommand(
     (result.data.web && result.data.web.length > 0) ||
     (result.data.images && result.data.images.length > 0) ||
     (result.data.news && result.data.news.length > 0) ||
-    (result.data.developer && result.data.developer.length > 0);
+    (result.data.developer && result.data.developer.length > 0) ||
+    (result.data.exchange && result.data.exchange.length > 0);
 
   if (!hasResults) {
     console.log('No results found.');

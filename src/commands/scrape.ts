@@ -18,6 +18,31 @@ import {
 import { getOrigin } from '../utils/url';
 import { executeMap } from './map';
 import { getStatus } from './status';
+import { buildExchangeCalls, handleExchangeRetrieveCommand } from './exchange';
+import type { ExchangeRetrieveOptions } from '../types/exchange';
+
+/**
+ * `firecrawl scrape --exchange provider/capability --options '<json>'`:
+ * a url-less scrape that executes Exchange capabilities. Delegates to the
+ * same executor as `firecrawl exchange retrieve`.
+ */
+export async function handleScrapeExchangeCommand(
+  addresses: string[],
+  optionsJson: string[],
+  options: Omit<ExchangeRetrieveOptions, 'calls'>
+): Promise<void> {
+  let calls: ExchangeRetrieveOptions['calls'];
+  try {
+    calls = buildExchangeCalls(addresses, optionsJson);
+  } catch (error) {
+    console.error(
+      'Error:',
+      error instanceof Error ? error.message : 'Unknown error occurred'
+    );
+    process.exit(1);
+  }
+  await handleExchangeRetrieveCommand({ ...options, calls });
+}
 
 /**
  * Output timing information if requested
