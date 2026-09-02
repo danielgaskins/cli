@@ -535,7 +535,7 @@ describe('handleScrapeExchangeCommand', () => {
           exchange: [
             {
               provider: 'fred',
-              capability: 'finance/series/observations',
+              capability: 'series/observations',
               creditsCost: 1,
               data: { observations: [] },
             },
@@ -546,7 +546,7 @@ describe('handleScrapeExchangeCommand', () => {
     });
 
     await handleScrapeExchangeCommand(
-      ['fred/finance/series/observations'],
+      ['fred/series/observations'],
       ['{"series_id":"CPIAUCSL"}'],
       { apiKey: 'fc-key', apiUrl: 'http://localhost:3002', json: true }
     );
@@ -559,7 +559,7 @@ describe('handleScrapeExchangeCommand', () => {
       exchange: [
         {
           provider: 'fred',
-          capability: 'finance/series/observations',
+          capability: 'series/observations',
           options: { series_id: 'CPIAUCSL' },
         },
       ],
@@ -573,7 +573,7 @@ describe('handleScrapeExchangeCommand', () => {
         exchange: [
           {
             provider: 'fred',
-            capability: 'finance/series/observations',
+            capability: 'series/observations',
             creditsCost: 1,
             data: { observations: [] },
           },

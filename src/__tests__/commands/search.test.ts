@@ -67,7 +67,7 @@ describe('executeSearch', () => {
   describe('Exchange source', () => {
     const exchangeHit = {
       provider: 'fred',
-      capability: 'finance/series/observations',
+      capability: 'series/observations',
       concept: 'series/observations',
       cohorts: ['finance'],
       creditsCost: 1,
@@ -154,13 +154,13 @@ describe('executeSearch', () => {
       const output = vi.mocked(writeOutput).mock.calls.at(-1)?.[0] as string;
       expect(output).toContain('=== Web Results ===');
       expect(output).toContain('=== Exchange Providers ===');
-      expect(output).toContain('fred/finance/series/observations');
+      expect(output).toContain('fred/series/observations');
       expect(output).toContain('Concept: series/observations');
       expect(output).toContain('Cohorts: finance');
       expect(output).toContain('Credits per call: 1');
       expect(output).toContain('Similarity: 0.8123');
       expect(output).toContain(
-        'Contract: firecrawl exchange discover finance fred finance/series/observations'
+        'Contract: firecrawl exchange discover finance fred series/observations'
       );
     });
 

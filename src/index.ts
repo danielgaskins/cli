@@ -1108,9 +1108,9 @@ Examples:
   $ firecrawl exchange discover                                    # cohorts
   $ firecrawl exchange discover finance                            # providers in a cohort
   $ firecrawl exchange discover finance fred                       # what a provider can do
-  $ firecrawl exchange discover finance fred finance/series/observations   # full contract
+  $ firecrawl exchange discover finance fred series/observations   # full contract
   $ firecrawl exchange discover --query "balance sheet" --limit 8  # semantic lookup
-  $ firecrawl exchange retrieve fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'
+  $ firecrawl exchange retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
   $ firecrawl search "nvidia balance sheet" --sources web,exchange --json`
     );
 
@@ -1121,10 +1121,7 @@ Examples:
     )
     .argument('[cohort]', 'Cohort slug, e.g. finance')
     .argument('[provider]', 'Provider slug, e.g. fred')
-    .argument(
-      '[capability]',
-      'Capability address, e.g. finance/series/observations'
-    )
+    .argument('[capability]', 'Capability address, e.g. series/observations')
     .option(
       '-q, --query <text>',
       'Semantic lookup across the whole catalogue (cannot be combined with path arguments)'
@@ -1169,7 +1166,7 @@ Examples:
     )
     .argument(
       '<addresses...>',
-      'provider/capability addresses, e.g. fred/finance/series/observations'
+      'provider/capability addresses, e.g. fred/series/observations'
     )
     .option(
       '--options <json>',

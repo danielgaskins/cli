@@ -38,7 +38,7 @@ export function assertExchangeKeyed(apiKey?: string, apiUrl?: string): void {
 
 /**
  * Split `provider/capability` on the first slash. Capability addresses carry
- * slashes of their own (`finance/series/observations`), so only the first one
+ * slashes of their own (`series/observations`), so only the first one
  * separates the provider.
  */
 export function parseExchangeAddress(address: string): ExchangeCall {
@@ -46,7 +46,7 @@ export function parseExchangeAddress(address: string): ExchangeCall {
   const slash = trimmed.indexOf('/');
   if (slash <= 0 || slash === trimmed.length - 1) {
     throw new Error(
-      `Invalid exchange address "${address}": expected provider/capability (e.g. fred/finance/series/observations)`
+      `Invalid exchange address "${address}": expected provider/capability (e.g. fred/series/observations)`
     );
   }
   return {

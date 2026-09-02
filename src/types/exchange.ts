@@ -31,7 +31,7 @@ export interface ExchangeDiscoverOptions extends ExchangeCommonOptions {
   cohort?: string;
   /** Provider slug (second rung), e.g. `fred` */
   provider?: string;
-  /** Capability address (third rung), e.g. `finance/series/observations` */
+  /** Capability address (third rung), e.g. `series/observations` */
   capability?: string;
   /** Semantic lookup across the whole catalogue (root only) */
   query?: string;

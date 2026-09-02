@@ -38,7 +38,7 @@ const axiosError = (status: number, body: Record<string, unknown>) =>
 
 const successItem = {
   provider: 'fred',
-  capability: 'finance/series/observations',
+  capability: 'series/observations',
   creditsCost: 1,
   data: { observations: [{ date: '2024-01-01', value: '308.4' }] },
   records: 1,
@@ -47,7 +47,7 @@ const successItem = {
 
 const failedItem = {
   provider: 'fred',
-  capability: 'finance/series/search',
+  capability: 'series/search',
   error: {
     code: 'credential_missing',
     message: 'FRED credential is not configured.',
@@ -58,9 +58,9 @@ const failedItem = {
 describe('exchange helpers', () => {
   describe('parseExchangeAddress', () => {
     it('splits on the first slash so capability addresses keep theirs', () => {
-      expect(parseExchangeAddress('fred/finance/series/observations')).toEqual({
+      expect(parseExchangeAddress('fred/series/observations')).toEqual({
         provider: 'fred',
-        capability: 'finance/series/observations',
+        capability: 'series/observations',
       });
     });
 
@@ -81,16 +81,16 @@ describe('exchange helpers', () => {
     it('pairs each --options value with the address at the same position', () => {
       expect(
         buildExchangeCalls(
-          ['fred/finance/series/observations', 'fred/finance/series/search'],
+          ['fred/series/observations', 'fred/series/search'],
           ['{"series_id":"CPIAUCSL"}']
         )
       ).toEqual([
         {
           provider: 'fred',
-          capability: 'finance/series/observations',
+          capability: 'series/observations',
           options: { series_id: 'CPIAUCSL' },
         },
-        { provider: 'fred', capability: 'finance/series/search' },
+        { provider: 'fred', capability: 'series/search' },
       ]);
     });
 
@@ -101,16 +101,16 @@ describe('exchange helpers', () => {
 
     it('rejects more --options values than addresses', () => {
       expect(() =>
-        buildExchangeCalls(['fred/finance/series/observations'], ['{}', '{}'])
+        buildExchangeCalls(['fred/series/observations'], ['{}', '{}'])
       ).toThrow(/More --options values/);
     });
 
     it('rejects options that are not a JSON object', () => {
       expect(() =>
-        buildExchangeCalls(['fred/finance/series/observations'], ['[1]'])
+        buildExchangeCalls(['fred/series/observations'], ['[1]'])
       ).toThrow(/expected a JSON object/);
       expect(() =>
-        buildExchangeCalls(['fred/finance/series/observations'], ['{oops'])
+        buildExchangeCalls(['fred/series/observations'], ['{oops'])
       ).toThrow(/Invalid JSON in --options/);
     });
 
@@ -132,9 +132,9 @@ describe('exchange helpers', () => {
         buildDiscoverPath({
           cohort: 'finance',
           provider: 'fred',
-          capability: 'finance/series/observations',
+          capability: 'series/observations',
         })
-      ).toBe('/exchange/discover/finance/fred/finance/series/observations');
+      ).toBe('/exchange/discover/finance/fred/series/observations');
     });
 
     it('encodes each segment without touching the slashes in an address', () => {
@@ -225,7 +225,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     const payload = {
       capabilities: [
         {
-          address: 'finance/series/observations',
+          address: 'series/observations',
           cohorts: ['finance'],
           concept: 'series/observations',
           creditsCost: 1,
@@ -293,10 +293,10 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
       calls: [
         {
           provider: 'fred',
-          capability: 'finance/series/observations',
+          capability: 'series/observations',
           options: { series_id: 'CPIAUCSL' },
         },
-        { provider: 'fred', capability: 'finance/series/search' },
+        { provider: 'fred', capability: 'series/search' },
       ],
       timeout: 30000,
     });
@@ -306,10 +306,10 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
       exchange: [
         {
           provider: 'fred',
-          capability: 'finance/series/observations',
+          capability: 'series/observations',
           options: { series_id: 'CPIAUCSL' },
         },
-        { provider: 'fred', capability: 'finance/series/search' },
+        { provider: 'fred', capability: 'series/search' },
       ],
       integration: 'cli',
       timeout: 30000,
@@ -332,13 +332,11 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     });
 
     await executeExchangeRetrieve({
-      calls: [{ provider: 'fred', capability: 'finance/series/observations' }],
+      calls: [{ provider: 'fred', capability: 'series/observations' }],
     });
 
     expect(mockHttpPost).toHaveBeenCalledWith('/v2/scrape', {
-      exchange: [
-        { provider: 'fred', capability: 'finance/series/observations' },
-      ],
+      exchange: [{ provider: 'fred', capability: 'series/observations' }],
       integration: 'cli',
     });
   });
@@ -352,7 +350,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     );
 
     const result = await executeExchangeRetrieve({
-      calls: [{ provider: 'fred', capability: 'finance/series/observations' }],
+      calls: [{ provider: 'fred', capability: 'series/observations' }],
     });
 
     expect(result).toEqual({
@@ -365,7 +363,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     vi.mocked(isKeylessMode).mockReturnValue(true);
 
     const result = await executeExchangeRetrieve({
-      calls: [{ provider: 'fred', capability: 'finance/series/observations' }],
+      calls: [{ provider: 'fred', capability: 'series/observations' }],
     });
 
     expect(result).toEqual({ success: false, error: EXCHANGE_KEY_REQUIRED });
@@ -450,7 +448,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
       data: {
         capabilities: [
           {
-            address: 'finance/series/observations',
+            address: 'series/observations',
             cohorts: ['finance'],
             concept: 'series/observations',
             creditsCost: 1,
@@ -468,7 +466,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     const output = writtenOutput();
     expect(output).toContain('=== Capabilities matching "cpi" ===');
-    expect(output).toContain('fred/finance/series/observations  (1 credits)');
+    expect(output).toContain('fred/series/observations  (1 credits)');
     expect(output).toContain('Similarity: 0.8123');
     expect(output).toContain('Searched 54 capabilities (process).');
   });
@@ -476,7 +474,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
   it('prints a contract with its options and a ready-to-run retrieve line', async () => {
     mockHttpGet.mockResolvedValue({
       data: {
-        capability: 'finance/series/observations',
+        capability: 'series/observations',
         provider: 'fred',
         creditsCost: 1,
         label: 'FRED series observations',
@@ -495,19 +493,19 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
     await handleExchangeDiscoverCommand({
       cohort: 'finance',
       provider: 'fred',
-      capability: 'finance/series/observations',
+      capability: 'series/observations',
     });
 
     expect(mockHttpGet).toHaveBeenCalledWith(
-      '/exchange/discover/finance/fred/finance/series/observations'
+      '/exchange/discover/finance/fred/series/observations'
     );
     const output = writtenOutput();
-    expect(output).toContain('=== fred/finance/series/observations ===');
+    expect(output).toContain('=== fred/series/observations ===');
     expect(output).toContain('Credits cost: 1');
     expect(output).toContain('series_id (required: true)');
     expect(output).toContain('FRED series id, e.g. CPIAUCSL');
     expect(output).toContain(
-      `Retrieve: firecrawl exchange retrieve fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'`
+      `Retrieve: firecrawl exchange retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'`
     );
   });
 
@@ -541,13 +539,13 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     await handleExchangeRetrieveCommand({
       calls: [
-        { provider: 'fred', capability: 'finance/series/observations' },
-        { provider: 'fred', capability: 'finance/series/search' },
+        { provider: 'fred', capability: 'series/observations' },
+        { provider: 'fred', capability: 'series/search' },
       ],
     });
 
     const output = writtenOutput();
-    expect(output).toContain('fred/finance/series/observations');
+    expect(output).toContain('fred/series/observations');
     expect(output).toContain('Credits cost: 1');
     expect(output).toContain('Records: 1');
     expect(output).toContain('"value": "308.4"');
@@ -569,7 +567,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
     });
 
     await handleExchangeRetrieveCommand({
-      calls: [{ provider: 'fred', capability: 'finance/series/observations' }],
+      calls: [{ provider: 'fred', capability: 'series/observations' }],
       json: true,
     });
 
@@ -591,7 +589,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     await expect(
       handleExchangeRetrieveCommand({
-        calls: [{ provider: 'fred', capability: 'finance/series/search' }],
+        calls: [{ provider: 'fred', capability: 'series/search' }],
       })
     ).rejects.toThrow('exit 1');
 
@@ -608,9 +606,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     await expect(
       handleExchangeRetrieveCommand({
-        calls: [
-          { provider: 'fred', capability: 'finance/series/observations' },
-        ],
+        calls: [{ provider: 'fred', capability: 'series/observations' }],
       })
     ).rejects.toThrow('exit 1');
 
@@ -625,9 +621,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     await expect(
       handleExchangeRetrieveCommand({
-        calls: [
-          { provider: 'fred', capability: 'finance/series/observations' },
-        ],
+        calls: [{ provider: 'fred', capability: 'series/observations' }],
       })
     ).rejects.toThrow('exit 1');
 

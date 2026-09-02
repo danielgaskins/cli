@@ -395,7 +395,7 @@ no keyless fallback, and the CLI refuses before sending anything.
 firecrawl exchange discover
 firecrawl exchange discover finance
 firecrawl exchange discover finance fred
-firecrawl exchange discover finance fred finance/series/observations
+firecrawl exchange discover finance fred series/observations
 
 # Inline the whole tree for a cohort
 firecrawl exchange discover finance --expand all --json
@@ -404,14 +404,14 @@ firecrawl exchange discover finance --expand all --json
 firecrawl exchange discover --query "balance sheet" --limit 8
 
 # Execute a capability (reads the contract first to learn its options)
-firecrawl exchange retrieve fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'
+firecrawl exchange retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
 
 # Batch up to 10; each --options pairs with the address at the same position
-firecrawl exchange retrieve fred/finance/series/observations fred/finance/series/search \
+firecrawl exchange retrieve fred/series/observations fred/series/search \
   --options '{"series_id":"CPIAUCSL"}' --options '{"q":"inflation"}' --json
 
 # Same execution through scrape (url-less)
-firecrawl scrape --exchange fred/finance/series/observations --options '{"series_id":"CPIAUCSL"}'
+firecrawl scrape --exchange fred/series/observations --options '{"series_id":"CPIAUCSL"}'
 
 # Find capabilities beside web results
 firecrawl search "nvidia balance sheet" --sources web,exchange --json
@@ -431,7 +431,7 @@ request), or in keyless mode.
 | -------------------- | --------------------------------------------------------------------------------- |
 | `[cohort]`           | Cohort slug (first rung), e.g. `finance`                                          |
 | `[provider]`         | Provider slug (second rung), e.g. `fred`                                          |
-| `[capability]`       | Capability address (third rung), e.g. `finance/series/observations`               |
+| `[capability]`       | Capability address (third rung), e.g. `series/observations`                       |
 | `-q, --query <text>` | Semantic lookup across the whole catalogue (root only)                            |
 | `--limit <n>`        | Maximum semantic hits (1-24, default: 8)                                          |
 | `--expand <tokens>`  | Inline more of the tree on a walk: `capabilities`, `contracts`, `examples`, `all` |
