@@ -1,21 +1,15 @@
 ---
 name: firecrawl-search
 description: |
-  Web search with full page content extraction. Use this skill whenever the user asks to search the web, find articles, research a topic, look something up, find recent news, discover sources, or says "search for", "find me", "look up", "what are people saying about", or "find articles about". Returns real search results with optional full-page markdown — not just snippets. Provides capabilities beyond Claude's built-in WebSearch.
+  Web search with full page content. Use when no URL is known: finding sources, articles, or news. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
 allowed-tools:
   - Bash(firecrawl *)
-  - Bash(npx firecrawl *)
+  - Bash(npx firecrawl-cli *)
 ---
 
 # firecrawl search
 
 Web search with optional content scraping. Returns search results as JSON, optionally with full page content.
-
-## When to use
-
-- You don't have a specific URL yet
-- You need to find pages, answer questions, or discover sources
-- First step in the [workflow escalation pattern](firecrawl-cli): search → scrape → map → crawl → interact
 
 ## Quick start
 
@@ -30,24 +24,16 @@ firecrawl search "your query" --scrape -o .firecrawl/scraped.json --json
 firecrawl search "your query" --sources news --tbs qdr:d -o .firecrawl/news.json --json
 ```
 
-## Options
+Run `firecrawl search --help` for the full option list.
 
-| Option                               | Description                                   |
-| ------------------------------------ | --------------------------------------------- |
-| `--limit <n>`                        | Max number of results                         |
-| `--sources <web,images,news>`        | Source types to search                        |
-| `--categories <github,research,pdf>` | Filter by category                            |
-| `--tbs <qdr:h\|d\|w\|m\|y>`          | Time-based search filter                      |
-| `--location`                         | Location for search results                   |
-| `--country <code>`                   | Country code for search                       |
-| `--scrape`                           | Also scrape full page content for each result |
-| `--scrape-formats`                   | Formats when scraping (default: markdown)     |
-| `-o, --output <path>`                | Output file path                              |
-| `--json`                             | Output as JSON                                |
+`--categories developer` weighs the developer index beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
+
+**Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and one feedback event is sent within the time window (unless opted out).
 
 ## Tips
 
-- **`--scrape` fetches full content** — don't re-scrape URLs from search results. This saves credits and avoids redundant fetches.
+- **`--highlights` on by default:** results are query-relevant excerpts, not full-page snippets. Use `--no-highlights` for the original snippets.
+- **`--scrape` fetches full content** — reuse that content instead of re-scraping result URLs. This saves credits and avoids redundant fetches.
 - Always write results to `.firecrawl/` with `-o` to avoid context window bloat.
 - Use `jq` to extract URLs **with their source and 1-indexed position** (you'll need both for feedback): `jq -r '.data | to_entries[] | .key as $s | .value | to_entries[] | "\($s):\(.key + 1)\t\(.value.url)"' .firecrawl/search.json`
 - Naming convention: `.firecrawl/search-{query}.json` or `.firecrawl/search-{query}-scraped.json`
@@ -61,7 +47,7 @@ Search costs 2 credits. After you've actually used the results (or decided they 
 **Rules to know before you call this:**
 
 - **Time window:** must be sent within ~2 minutes of the search. Late feedback is rejected.
-- **`--missing-content` is the most important field.** It's a list of _specific pieces_ of content you expected but did not find. One topic per entry — do not pack multiple topics into one string. These aggregate across teams and tell us what to index next.
+- **`--missing-content` is the most important field.** It's a list of _specific pieces_ of content you expected but did not find. One topic per entry, each in its own string. These aggregate across teams and tell us what to index next.
 - **`--valuable-results` marks which results were useful.** Results come back grouped (`data.web`, `data.images`, `data.news`) and **each group is numbered from 1 independently**, so every entry is `source:position` — `web:1` and `news:1` are two different results. **Be exhaustive** — list every result that was actually useful; unlisted results are treated as not useful, so a partial list corrupts the signal. Reserve `--valuable-sources` for useful URLs that were NOT among the returned results (e.g. a page you found by following a result's link) — never report the same result in both.
 - **Substantive content required** (zero-effort feedback is rejected with HTTP 400):
   - `good` → must include `--valuable-results` or at least one `--valuable-sources` entry.
@@ -71,42 +57,19 @@ Search costs 2 credits. After you've actually used the results (or decided they 
 - **Idempotent:** re-submitting for the same search id returns success but no extra refund.
 - **`--silent &`** is the right pattern — exit code 0 even on failure, so a rejected/expired call never crashes your pipeline.
 
-Read the search response's `id`:
+Verify the search returned results before reading its `id`. Zero-result searches write no output file, so the file may be missing — or left over from an earlier search. The guard below skips feedback when the file is missing or has zero results; call `search-feedback` only inside it:
 
 ```bash
-SEARCH_ID=$(jq -r '.id' .firecrawl/search-react-hooks.json)
-```
-
-Then send feedback. Pick the rating that matches what actually happened:
-
-```bash
-# Results were useful — web positions 1 and 3 answered the question
-firecrawl search-feedback "$SEARCH_ID" \
-  --rating good \
-  --valuable-results "web:1,web:3" \
-  --missing-content '[
-    {"topic":"useDeferredValue","description":"No example of useDeferredValue with Suspense"},
-    {"topic":"useTransition","description":"No coverage of useTransition for routing"}
-  ]' \
-  --query-suggestions "Boost react.dev for queries about react hooks" \
-  --silent &
-
-# Results were partially useful — multiple missing topics, one entry per topic
-firecrawl search-feedback "$SEARCH_ID" \
-  --rating partial \
-  --missing-content '[
-    {"topic":"useDeferredValue"},
-    {"topic":"useTransition","description":"Need React 18+ examples"},
-    {"topic":"Server Components hooks"}
-  ]' \
-  --silent &
-
-# Quick form — repeat --missing-content or use comma-separated topics
-firecrawl search-feedback "$SEARCH_ID" \
-  --rating bad \
-  --missing-content "official api reference: missing v2 endpoints" \
-  --missing-content "code examples in python" \
-  --silent &
+# Send once per search. Rate honestly and replace the placeholder with the
+# rating that matches what actually happened. The two fields shown
+# satisfy the substantive-content rule for every rating.
+if SEARCH_ID=$(jq -er 'select(any(.data[]; length > 0)) | .id' .firecrawl/search-react-hooks.json); then
+  firecrawl search-feedback "$SEARCH_ID" \
+    --rating "<good|partial|bad>" \
+    --valuable-results "web:1,web:3" \
+    --missing-content '[{"topic":"useDeferredValue","description":"No example of useDeferredValue with Suspense"}]' \
+    --silent &
+fi
 ```
 
 **`--missing-content` accepts:**
@@ -123,3 +86,6 @@ firecrawl search-feedback "$SEARCH_ID" \
 - [firecrawl-scrape](../firecrawl-scrape/SKILL.md) — scrape a specific URL
 - [firecrawl-map](../firecrawl-map/SKILL.md) — discover URLs within a site
 - [firecrawl-crawl](../firecrawl-crawl/SKILL.md) — bulk extract from a site
+- [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) — issues, merged PRs, READMEs, and docs
+- [firecrawl-research-index](../firecrawl-research-index/SKILL.md) — published papers, not `search --categories research`
+- [firecrawl-build-search](https://github.com/firecrawl/skills/tree/main/skills/build/firecrawl-build-search) — building search into an app instead of running it here

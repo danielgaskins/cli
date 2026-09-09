@@ -1,7 +1,7 @@
 {
   "name": "firecrawl-cli",
-  "version": "1.19.27",
-  "description": "Command-line interface for Firecrawl. Scrape, crawl, and extract data from any website directly from your terminal.",
+  "version": "1.23.3",
+  "description": "Command-line interface for Firecrawl. Scrape, crawl, and extract data from any website, and search a ~43M-abstract research paper index (PubMed, bioRxiv, medRxiv, arXiv), directly from your terminal.",
   "main": "dist/index.js",
   "bin": {
     "firecrawl": "dist/index.js"
@@ -14,8 +14,8 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm run build",
     "prepare": "husky",
-    "format": "prettier --write \"src/**/*.{ts,json}\" \"*.{json,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,json}\" \"*.{json,md}\"",
+    "format": "prettier --write \"src/**/*.{ts,json}\" \"skills/**/*.md\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\" \"skills/**/*.md\" \"*.{json,md}\"",
     "type-check": "tsc --noEmit",
     "test:watch": "vitest",
     "test": "vitest run",
@@ -42,7 +42,16 @@
     "markdown",
     "search",
     "web search",
-    "skill"
+    "skill",
+    "research",
+    "paper search",
+    "literature search",
+    "biomedical",
+    "pubmed",
+    "biorxiv",
+    "medrxiv",
+    "arxiv",
+    "life sciences"
   ],
   "author": "Firecrawl",
   "license": "ISC",

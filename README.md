@@ -1,6 +1,6 @@
 # 🔥 Firecrawl CLI
 
-Command-line interface for Firecrawl. Search, scrape, interact, crawl, map, and run agent jobs directly from your terminal.
+Command-line interface for Firecrawl. Search, scrape, interact, crawl, map, search research papers and developer sources, and run agent jobs directly from your terminal.
 
 ## Installation
 
@@ -11,7 +11,7 @@ npm install -g firecrawl-cli
 Or set up everything in one command (install CLI globally, authenticate, and add skills across all detected coding editors):
 
 ```bash
-npx -y firecrawl-cli@1.19.6 init -y --browser
+npx -y firecrawl-cli@latest init -y --browser
 ```
 
 - `-y` runs setup non-interactively
@@ -20,14 +20,24 @@ npx -y firecrawl-cli@1.19.6 init -y --browser
 
 ### Setup Skills, Workflows, and MCP
 
-If you are using an AI coding agent like Claude Code, you can also install the skills manually:
+If you are using an AI coding agent like Claude Code, you can also install skill groups manually — one command per family:
 
 ```bash
-firecrawl setup skills
-firecrawl setup workflows
+firecrawl setup core       # scrape/search/crawl/interact primitives + index skills ("skills" is an alias)
+firecrawl setup build      # app-integration skills for the Firecrawl API
+firecrawl setup workflows  # end-to-end recipes (lead gen, deep research, ...)
 ```
 
-These install globally across all detected coding editors by default. Use `--agent <agent>` to scope either command to one editor.
+Or install a single skill by name — the `firecrawl-` prefix is optional:
+
+```bash
+firecrawl setup developer-index
+firecrawl setup seo-audit
+```
+
+If no API key is found afterwards, an interactive terminal offers a browser login (pass `--browser` to log in without the prompt); non-interactive runs never block — they print a hint and the skills walk agents through setup on first use.
+
+These install globally across all detected coding editors by default. Use `--agent <agent>` to scope any of them to one editor.
 
 #### Scope setup to a single harness
 
@@ -62,16 +72,24 @@ detected harnesses (all selected by default) so you can pick a subset.
 
 ### Agent skills
 
-The init command installs all Firecrawl agent skill segments into AI coding agents (Cursor, Claude Code, Windsurf, etc.):
+The init command installs the **CLI skills** by default and offers the **workflow skills** as optional extras, into AI coding agents (Cursor, Claude Code, Windsurf, etc.):
 
-- **CLI skills** — teach agents how to use the Firecrawl CLI for live web work (search, scrape, interact, map, crawl, agent)
-- **Build skills** — teach agents how to integrate Firecrawl into application code (choose endpoints, wire SDKs, set up API keys)
-- **Workflow skills** — teach agents how to produce Firecrawl-powered deliverables such as research briefs, SEO audits, QA reports, lead lists, knowledge bases, and design-system extraction
+- **CLI skills** — teach agents how to use the Firecrawl CLI for live web work (search, scrape, interact, map, crawl, agent). Installed by default.
+- **Workflow skills** — teach agents how to produce Firecrawl-powered deliverables such as research briefs, SEO audits, QA reports, lead lists, knowledge bases, and design-system extraction. Interactive multi-select during init.
+
+All skill families live in the [`firecrawl/skills`](https://github.com/firecrawl/skills) catalog — including the **build skills** for integrating Firecrawl into application code:
+
+```bash
+npx skills add firecrawl/skills
+```
+
+> Contributing skills? CLI skills (including the research/developer index skills) → PR this repo (`skills/`). Build/SDK skills → PR the [`firecrawl`](https://github.com/firecrawl/firecrawl) monorepo (`skills/`). Workflow skills → PR [`firecrawl/firecrawl-workflows`](https://github.com/firecrawl/firecrawl-workflows). The catalog ([`firecrawl/skills`](https://github.com/firecrawl/skills)) is read-only — never PR it directly.
 
 To reinstall skills manually:
 
 ```bash
-firecrawl setup skills
+firecrawl setup core
+firecrawl setup build
 firecrawl setup workflows
 ```
 
@@ -281,10 +299,16 @@ firecrawl search "landscape photography" --sources images
 # Multiple sources
 firecrawl search "machine learning" --sources web,news,images
 
-# Filter by category (GitHub, research papers, PDFs)
+# Filter by category (GitHub, research-affiliated websites, PDFs)
 firecrawl search "web data python" --categories github
 firecrawl search "transformer architecture" --categories research
 firecrawl search "machine learning" --categories github,research
+
+# Note: --categories research narrows *web* results to research-affiliated
+# websites. To search papers themselves, use `firecrawl research search-papers`.
+
+# Developer search: GitHub issues, merged PRs, READMEs, and docs
+firecrawl search "axum middleware ordering" --categories developer
 
 # Time-based search
 firecrawl search "AI announcements" --tbs qdr:d   # Past day
@@ -304,23 +328,23 @@ firecrawl search "AI data tools"
 
 #### Search Options
 
-| Option                       | Description                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                      |
-| `--sources <sources>`        | Comma-separated: `web`, `images`, `news` (default: web)                                     |
-| `--categories <categories>`  | Comma-separated: `github`, `research`, `pdf`                                                |
-| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year) |
-| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                   |
-| `--country <code>`           | ISO country code (default: US)                                                              |
-| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                    |
-| `--highlights`               | Return query-relevant highlights for each result                                            |
-| `--no-highlights`            | Keep the original search snippets                                                           |
-| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                          |
-| `--scrape`                   | Enable scraping of search results                                                           |
-| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                  |
-| `--only-main-content`        | Include only main content when scraping (default: true)                                     |
-| `-o, --output <path>`        | Save to file                                                                                |
-| `--json`                     | Output as compact JSON                                                                      |
+| Option                       | Description                                                                                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                    |
+| `--sources <sources>`        | Comma-separated: `web`, `images`, `news` (default: web)                                                                                                                   |
+| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer` |
+| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                               |
+| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                 |
+| `--country <code>`           | ISO country code (default: US)                                                                                                                                            |
+| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                  |
+| `--highlights`               | Return query-relevant highlights for each result                                                                                                                          |
+| `--no-highlights`            | Keep the original search snippets                                                                                                                                         |
+| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                        |
+| `--scrape`                   | Enable scraping of search results                                                                                                                                         |
+| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                |
+| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                   |
+| `-o, --output <path>`        | Save to file                                                                                                                                                              |
+| `--json`                     | Output as compact JSON                                                                                                                                                    |
 
 #### Examples
 
@@ -334,8 +358,14 @@ firecrawl search "web data library" --categories github --limit 20
 # Search and get full content
 firecrawl search "firecrawl documentation" --scrape --scrape-formats markdown --json -o results.json
 
-# Find research papers
+# Find research papers -- use the paper index, not the website filter
+firecrawl research search-papers "large language models" --json
+
+# Narrow web results to research-affiliated websites (not the paper index)
 firecrawl search "large language models" --categories research --json
+
+# Answer a programming question from issues, merged PRs, READMEs, and docs
+firecrawl search "tokio select cancellation safety" --categories developer --json
 
 # Search with location targeting
 firecrawl search "best coffee shops" --location "Berlin,Germany" --country DE
@@ -343,6 +373,95 @@ firecrawl search "best coffee shops" --location "Berlin,Germany" --country DE
 # Get news from the past week
 firecrawl search "AI startups funding" --sources news --tbs qdr:w --limit 15
 ```
+
+---
+
+### `developer` - Search developer sources
+
+Search an index built for coding agents: GitHub issues, merged pull requests, repository READMEs, and curated documentation sites. Use it for a programming question: code behaviour, a library or framework, an API contract, an error message, or a known bug.
+
+The CLI intentionally keeps this agent-facing surface lean: it accepts only the query and result count. Express repository, source, result-kind, language, topic, license, and other scoping intent in the query text; semantic retrieval handles the scoping. For advanced filters, use the [Developer Index REST API](https://docs.firecrawl.dev/features/developer).
+
+```bash
+firecrawl developer "axum middleware ordering"
+```
+
+#### Options
+
+| Option                | Description                                                |
+| --------------------- | ---------------------------------------------------------- |
+| `--limit <n>`         | Number of results (default: 10, max: 100)                  |
+| `-o, --output <path>` | Save to file                                               |
+| `--json`              | Output full response, including citations and index status |
+| `--pretty`            | Pretty print JSON output                                   |
+
+#### Examples
+
+```bash
+# Investigate a known bug
+firecrawl developer "tokio spawn_blocking panics thread limit" --limit 10
+
+# Put repository and evidence-kind intent directly in the semantic query
+firecrawl developer "tokio select cancellation safety in tokio-rs/tokio issues and merged pull requests"
+
+# Keep the full response, including passages, citations, and licenses
+firecrawl developer "tokio select cancellation safety" --json -o results.json
+```
+
+---
+
+### `research` - Search research papers
+
+Search Firecrawl's research paper index: roughly 43M abstracts, around 90% biomedical (PubMed, bioRxiv, medRxiv) plus arXiv. Use this for biomedical, clinical, and scientific literature rather than scraping PubMed, bioRxiv, or Google Scholar by hand.
+
+This is **not** the same thing as `firecrawl search --categories research`, which only narrows ordinary web results to research-affiliated websites.
+
+```bash
+# Find papers by topic (start here)
+firecrawl research search-papers "CRISPR base editing off-target effects" --limit 20
+
+# Full metadata for one paper, by any supported id form
+firecrawl research inspect-paper pmid:40953549
+
+# Expand along the citation graph from your strongest hits
+firecrawl research related-papers pmcid:PMC12530322 --intent "in vivo delivery"
+
+# Read full-text passages to verify a specific claim
+firecrawl research read-paper doi:10.1016/j.neunet.2025.108095 --question "What was the sample size?"
+
+# Search GitHub issue/PR history and repository READMEs
+firecrawl research search-github "foundationdb queue worker shutdown" --limit 10
+```
+
+Paper ids accept `pmid:`, `pmcid:`, `doi:`, and `arxiv:` forms, plus canonical `paperId` values returned by search.
+
+#### Subcommands
+
+| Subcommand                    | Description                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `search-papers <query>`       | Semantic (HyDE) search over paper abstracts. The primary entry point.       |
+| `inspect-paper <paperId>`     | Canonical metadata: title, abstract, authors, categories, source ids, dates |
+| `related-papers <seedIds...>` | Citation-graph expansion from seed papers, ranked against `--intent`        |
+| `read-paper <paperId>`        | Best-matching in-body full-text passages for a `--question`                 |
+| `search-github <query>`       | GitHub issue/PR history and repository READMEs                              |
+
+#### `search-papers` Options
+
+| Option                      | Description                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `--limit <n>`               | Number of results (default: 40)                                                        |
+| `--authors <authors>`       | Comma-separated author substring filter(s); all must match                             |
+| `--categories <categories>` | arXiv-style taxonomy labels (e.g. `cs.LG,cs.IR`). Biomedical records do not use these. |
+| `--from <date>`             | Inclusive lower bound on created/updated date (YYYY-MM-DD)                             |
+| `--to <date>`               | Inclusive upper bound on created/updated date (YYYY-MM-DD)                             |
+| `-o, --output <path>`       | Save to file                                                                           |
+| `--json`                    | Output as compact JSON                                                                 |
+| `--pretty`                  | Pretty print JSON output                                                               |
+
+#### Tips
+
+- Run several distinct framings of the same question rather than one query -- recall improves markedly.
+- Use `search-papers` to find anchors, `related-papers` to expand, then `read-paper` to verify a candidate before including it.
 
 ---
 
@@ -571,10 +690,10 @@ firecrawl agent "Find the top 5 competitors of Notion and their pricing" --wait 
 firecrawl agent "Get all blog post titles and dates" --urls https://blog.example.com --max-credits 100 --wait
 
 # Use higher accuracy model for complex extraction
-firecrawl agent "Extract detailed technical specifications" --model spark-1-pro --wait --pretty
+firecrawl agent "Extract detailed technical specifications" --model spark-1-pro --wait --json --pretty
 
 # Save structured results to file
-firecrawl agent "Extract contact information" --schema-file ./contact-schema.json --wait -o contacts.json --pretty
+firecrawl agent "Extract contact information" --schema-file ./contact-schema.json --wait --json -o contacts.json --pretty
 
 # Check job status without waiting
 firecrawl agent abc123-def456-... --json
@@ -750,7 +869,7 @@ firecrawl --status
 ```
 
 ```
-  🔥 firecrawl cli v1.19.6
+  🔥 firecrawl cli v1.20.0
 
   ● Authenticated via stored credentials
   Concurrency: 0/100 jobs (parallel scrape limit)
@@ -861,9 +980,9 @@ firecrawl x download https://docs.firecrawl.dev --include-paths "/features,/sdks
 
 ### Workflow Skills
 
-The old experimental AI workflow commands have moved to the NPX-installable
-[`firecrawl/firecrawl-workflows`](https://github.com/firecrawl/firecrawl-workflows)
-skills package. Workflow skills infer from the user's request first and only ask
+The old experimental AI workflow commands have moved to the
+[`firecrawl/skills`](https://github.com/firecrawl/skills) catalog
+(`skills/workflows/`). Workflow skills infer from the user's request first and only ask
 short clarifying questions when required inputs are missing. Install them with:
 
 ```bash

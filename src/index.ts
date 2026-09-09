@@ -20,6 +20,7 @@ import { handleMapCommand } from './commands/map';
 import { handleParseCommand } from './commands/parse';
 import { createMonitorCommand } from './commands/monitor';
 import { handleSearchCommand } from './commands/search';
+import { handleDeveloperSearchCommand } from './commands/developer';
 import {
   handleInspectPaperCommand,
   handleReadPaperCommand,
@@ -920,7 +921,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--categories <categories>',
-      'Comma-separated categories to filter: github, research, pdf'
+      'Comma-separated categories to filter: github, research, pdf, developer (research filters web results to research-affiliated websites -- it is NOT the paper index; for papers use `firecrawl research search-papers`. developer searches indexed GitHub issues, merged PRs, READMEs, and docs)'
     )
     .option(
       '--tbs <value>',
@@ -1002,7 +1003,7 @@ function createSearchCommand(): Command {
           .map((c: string) => c.trim().toLowerCase()) as SearchCategory[];
 
         // Validate categories
-        const validCategories = ['github', 'research', 'pdf'];
+        const validCategories = ['github', 'research', 'pdf', 'developer'];
         for (const category of categories) {
           if (!validCategories.includes(category)) {
             console.error(
@@ -1049,18 +1050,71 @@ function createSearchCommand(): Command {
 }
 
 /**
+ * Create and configure the developer command
+ */
+function createDeveloperCommand(): Command {
+  const developerCmd = new Command('developer')
+    .description(
+      'Search an index built for coding agents: GitHub issues, merged PRs, repository READMEs, and curated documentation sites. Express repository, source, language, topic, license, and other scoping intent in the query text; semantic retrieval handles the scoping.'
+    )
+    .argument('<query>', 'Natural-language developer question or search phrase')
+    .option(
+      '--limit <number>',
+      'Number of results to return (default: 10, max: 100)',
+      parseInt
+    )
+    .addOption(new Option('--k <number>').argParser(parseInt).hideHelp())
+    .option(
+      '-k, --api-key <key>',
+      'Firecrawl API key (overrides global --api-key)'
+    )
+    .option('--api-url <url>', 'API URL (overrides global --api-url)')
+    .option('-o, --output <path>', 'Output file path (default: stdout)')
+    .option('--json', 'Output as compact JSON', false)
+    .option('--pretty', 'Pretty print JSON output', false)
+    .addHelpText(
+      'after',
+      `
+Developer search accepts a query and a result count. Put all scoping intent in
+the query text; semantic retrieval handles it.
+
+Examples:
+  $ firecrawl developer "axum middleware ordering in tokio-rs/axum issues" --limit 10
+  $ firecrawl developer "tokio select cancellation safety" --json
+`
+    )
+    .action(async (query, options) => {
+      await handleDeveloperSearchCommand({
+        query,
+        k: researchLimit(options),
+        apiKey: options.apiKey,
+        apiUrl: options.apiUrl,
+        output: options.output,
+        json: options.json,
+        pretty: options.pretty,
+      });
+    });
+
+  return developerCmd;
+}
+
+/**
  * Create and configure the research command group
  */
 function createResearchCommand(): Command {
   const researchCmd = new Command('research')
-    .description('Research arXiv papers and GitHub history using Firecrawl')
+    .description(
+      "Search Firecrawl's research paper index: ~43M abstracts, around 90% biomedical (PubMed, bioRxiv, medRxiv) plus arXiv. Use this for biomedical, clinical, and scientific literature instead of scraping PubMed, bioRxiv, or Google Scholar by hand. Also searches GitHub issue/PR history."
+    )
     .addHelpText(
       'after',
       `
 Examples:
+  $ firecrawl research search-papers "CRISPR base editing off-target effects" --limit 20
   $ firecrawl research search-papers "diffusion image synthesis" --limit 20
-  $ firecrawl research inspect-paper arxiv:1706.03762
-  $ firecrawl research related-papers arxiv:1706.03762 --intent "efficient transformers"
+  $ firecrawl research inspect-paper pmid:40953549
+  $ firecrawl research related-papers pmcid:PMC12530322 --intent "in vivo delivery"
+  $ firecrawl research read-paper doi:10.1016/j.neunet.2025.108095 --question "What was the sample size?"
   $ firecrawl research read-paper arxiv:1706.03762 --question "What is the attention mechanism?"
   $ firecrawl research search-github "foundationdb queue worker shutdown" --limit 10
 `
@@ -1069,7 +1123,7 @@ Examples:
   researchCmd
     .command('search-papers')
     .description(
-      'Primary entry point for finding arXiv papers by topic. Semantic (HyDE) search over arXiv abstracts; returns ranked papers with arXiv id, title, and abstract. The query should be a natural-language description of what you want. Run several distinct framings of the question rather than one query. Returns up to k results (default 40).'
+      'Primary entry point for finding research papers by topic. Semantic (HyDE) search over ~43M paper abstracts, around 90% biomedical (PubMed, bioRxiv, medRxiv) plus arXiv; returns ranked papers with a source id (pmid:, pmcid:, doi:, or arxiv:), title, and abstract. Use this instead of web-searching or scraping PubMed, bioRxiv, medRxiv, or Google Scholar. The query should be a natural-language description of what you want. Run several distinct framings of the question rather than one query. Returns up to k results (default 40).'
     )
     .argument('<query>', 'Natural-language description of the papers to find')
     .option(
@@ -1084,7 +1138,7 @@ Examples:
     )
     .option(
       '--categories <categories>',
-      'Comma-separated arXiv category filter(s), e.g. cs.LG,cs.IR; all must match'
+      'Comma-separated category filter(s); all must match. Values are arXiv-style taxonomy labels, e.g. cs.LG,cs.IR. PubMed/bioRxiv/medRxiv records do not use that taxonomy, so omit this flag when searching biomedical literature.'
     )
     .option(
       '--from <date>',
@@ -1149,11 +1203,11 @@ Examples:
   researchCmd
     .command('related-papers')
     .description(
-      'Expand from anchor papers you have already found, via the citation graph, ranked and filtered to a natural-language intent. Pass arXiv ids of your strongest hits as seed ids. Modes: similar, citers, references. This reaches relevant papers that plain search misses. A similar call already runs a deep multi-round expansion internally.'
+      'Expand from anchor papers you have already found, via the citation graph, ranked and filtered to a natural-language intent. Pass the ids of your strongest hits as seed ids, in any supported form (pmid:, pmcid:, doi:, arxiv:, or a canonical paperId). Modes: similar, citers, references. This reaches relevant papers that plain search misses. A similar call already runs a deep multi-round expansion internally.'
     )
     .argument(
       '<seedIds...>',
-      'Seed paper ids, e.g. arxiv:1706.03762 2014215642691656232'
+      'Space-separated seed paper ids such as pmid:40953549, pmcid:PMC12530322, doi:10.1016/j.neunet.2025.108095, or arxiv:1706.03762; canonical paperIds (e.g. 2014215642691656232) also work'
     )
     .requiredOption(
       '--intent <text>',
@@ -2063,6 +2117,7 @@ program.addCommand(createMapCommand());
 program.addCommand(createParseCommand());
 program.addCommand(createMonitorCommand());
 program.addCommand(createSearchCommand());
+program.addCommand(createDeveloperCommand());
 program.addCommand(createResearchCommand());
 program.addCommand(createFeedbackCommand());
 program.addCommand(createSearchFeedbackCommand());
@@ -2206,20 +2261,32 @@ program
 program
   .command('setup')
   .description(
-    'Set up individual firecrawl integrations (skills, workflows, mcp, defaults)'
+    'Set up individual firecrawl integrations (core, build, workflows, mcp, defaults)'
   )
   .argument(
     '[subcommand]',
-    'What to set up: "skills", "workflows", "mcp", or "defaults"; omit for an interactive installer'
+    'What to set up: "core" (alias "skills"), "build", "workflows", "mcp", "defaults", or a single catalog skill name (the "firecrawl-" prefix is optional, e.g. "developer-index"); omit for an interactive installer'
   )
   .option('-g, --global', 'Install globally (user-level)')
   .option(
+    '--project',
+    'For "mcp", install into project scope (stored API keys are never written to project files)'
+  )
+  .option(
     '-a, --agent <agent>',
-    'Limit to a specific agent; for "mcp", use "all" to update every launch integration'
+    'Limit to a specific agent; required for environment-backed MCP setup, or use "all" to update every launch integration'
   )
   .option(
     '-y, --yes',
     'Skip prompts; for bare setup, install the default skills + MCP bundle'
+  )
+  .option(
+    '--keyless',
+    'Configure anonymous hosted MCP even when an API key is stored'
+  )
+  .option(
+    '--browser',
+    'If no API key is found after installing skills, log in via browser'
   )
   .option(
     '--undo',
@@ -2264,6 +2331,10 @@ program
   .option('--config', 'Alias for --install')
   .option('--skip-mcp', 'Launch without installing or updating Firecrawl MCP')
   .option('--skip-skills', 'Launch without installing Firecrawl skills')
+  .option(
+    '--keyless',
+    'Configure anonymous hosted MCP without an Authorization header'
+  )
   .option(
     '-g, --global',
     'Install Firecrawl MCP globally for the selected agent',
