@@ -304,7 +304,7 @@ firecrawl search "machine learning" --sources web,news,images
 # Add Exchange capability hits (data providers, not documents) beside web results.
 # Free, needs an API key on a team with Exchange access; execute a hit with
 # `firecrawl exchange retrieve`.
-firecrawl search "nvidia balance sheet" --sources web,exchange --json
+firecrawl search "nvidia balance sheet" --sources web,alexandria --json
 
 # Filter by category (GitHub, research-affiliated websites, PDFs)
 firecrawl search "web data python" --categories github
@@ -335,23 +335,23 @@ firecrawl search "AI data tools"
 
 #### Search Options
 
-| Option                       | Description                                                                                                                                                                |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                     |
-| `--sources <sources>`        | Comma-separated: `web`, `images`, `news`, `exchange` (default: web). `exchange` returns capability hits in `data.exchange` -- see [`exchange`](#exchange---data-providers) |
-| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`  |
-| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                |
-| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                  |
-| `--country <code>`           | ISO country code (default: US)                                                                                                                                             |
-| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                   |
-| `--highlights`               | Return query-relevant highlights for each result                                                                                                                           |
-| `--no-highlights`            | Keep the original search snippets                                                                                                                                          |
-| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                         |
-| `--scrape`                   | Enable scraping of search results                                                                                                                                          |
-| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                 |
-| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                    |
-| `-o, --output <path>`        | Save to file                                                                                                                                                               |
-| `--json`                     | Output as compact JSON                                                                                                                                                     |
+| Option                       | Description                                                                                                                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                                   |
+| `--sources <sources>`        | Comma-separated names or JSON source objects: `web`, `images`, `news`, `alexandria` (default: web). Alexandria returns `data.alexandria` -- see [`exchange`](#exchange---data-providers) |
+| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`                |
+| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                              |
+| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                                |
+| `--country <code>`           | ISO country code (default: US)                                                                                                                                                           |
+| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                                 |
+| `--highlights`               | Return query-relevant highlights for each result                                                                                                                                         |
+| `--no-highlights`            | Keep the original search snippets                                                                                                                                                        |
+| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                                       |
+| `--scrape`                   | Enable scraping of search results                                                                                                                                                        |
+| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                               |
+| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                                  |
+| `-o, --output <path>`        | Save to file                                                                                                                                                                             |
+| `--json`                     | Output as compact JSON                                                                                                                                                                   |
 
 #### Examples
 
@@ -382,6 +382,34 @@ firecrawl search "AI startups funding" --sources news --tbs qdr:w --limit 15
 ```
 
 ---
+
+### Alexandria discovery
+
+```bash
+firecrawl search "podcast transcripts" --sources web,alexandria --skills --json
+firecrawl search --sources alexandria --mode browse --tool-categories finance --level providers --json
+firecrawl search --sources alexandria --providers particle --level tools --expand options,response,examples --languages javascript,python,curl --limit 5 --json
+firecrawl search --sources '[{"type":"alexandria","domains":["podcasts.apple.com"],"level":"groups"}]' --json
+firecrawl exchange tools https://podcasts.apple.com/us/ --query spotify
+firecrawl exchange skill <id>
+```
+
+Alexandria accepts `--mode semantic|browse`, `--tool-categories`, `--providers`,
+`--domains`, `--groups`, `--capabilities`, `--level categories|providers|groups|tools`,
+`--expand options,response,examples`, `--languages javascript,python,curl`,
+`--limit`, and `--cursor`. Lists use commas. `--sources` also accepts the API's
+mixed string/object JSON array; this preserves every progressive disclosure knob.
+Omit the query for catalogue-only browsing. `exchange` remains a source alias
+and is sent as `alexandria`.
+
+`data.alexandria` preserves `status`, `mode`, `level`, `items`, `total` and
+`nextCursor`. Every item's `next` is a complete search request: reuse its query
+and JSON sources to expand. Keep query and filters when paging. `unavailable`
+is distinct from zero matches. Contextual tools match provider-configured query
+terms and domains; `exchange skill` reads their Markdown contracts. Catalogue
+visibility comes from authenticated team access. Web search and provider
+execution retain their own charges. These controls require the Alexandria API
+deployment; a local CLI build does not deploy the backend.
 
 ### `exchange` - Data providers
 
@@ -414,16 +442,22 @@ firecrawl exchange retrieve fred/series/observations fred/series/search \
 firecrawl scrape --exchange fred/series/observations --options '{"series_id":"CPIAUCSL"}'
 
 # Find capabilities beside web results
-firecrawl search "nvidia balance sheet" --sources web,exchange --json
+firecrawl search "nvidia balance sheet" --sources web,alexandria --json
 ```
 
 `retrieve` posts to `/v2/scrape` with an `exchange` array and prints each
 item with its `creditsCost` (`--json` mirrors the API envelope:
-`{ success, scrape_id, data: { exchange: [...], creditsCost } }`). A provider
+`{ success, scrape_id, requestId, data: { exchange: [...], creditsCost } }`). A provider
 error inside the batch is reported per item and does not fail the request; the
 exit code is 1 only when every item failed, when the request itself was
 rejected (403 team not enabled, 402 insufficient credits, 409 duplicate
 request), or in keyless mode.
+
+Execution generates a request ID once and sends `x-request-id`. It returns the ID
+and prints it on stderr, including after a failure. Retry the identical payload
+with `--request-id <id>`; never use a new ID to bypass a pending or uncertain 409.
+The API reserves the maximum cost before execution and rejects insufficient
+credits before calling a provider. `perRecord` prices depend on returned records.
 
 #### `discover` Options
 

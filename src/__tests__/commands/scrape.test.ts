@@ -548,27 +548,37 @@ describe('handleScrapeExchangeCommand', () => {
     await handleScrapeExchangeCommand(
       ['fred/series/observations'],
       ['{"series_id":"CPIAUCSL"}'],
-      { apiKey: 'fc-key', apiUrl: 'http://localhost:3002', json: true }
+      {
+        apiKey: 'fc-key',
+        apiUrl: 'http://localhost:3002',
+        json: true,
+        requestId: 'scrape-retry',
+      }
     );
 
     expect(getClient).toHaveBeenCalledWith({
       apiKey: 'fc-key',
       apiUrl: 'http://localhost:3002',
     });
-    expect(mockHttpPost).toHaveBeenCalledWith('/v2/scrape', {
-      exchange: [
-        {
-          provider: 'fred',
-          capability: 'series/observations',
-          options: { series_id: 'CPIAUCSL' },
-        },
-      ],
-      integration: 'cli',
-    });
+    expect(mockHttpPost).toHaveBeenCalledWith(
+      '/v2/scrape',
+      {
+        exchange: [
+          {
+            provider: 'fred',
+            capability: 'series/observations',
+            options: { series_id: 'CPIAUCSL' },
+          },
+        ],
+        integration: 'cli',
+      },
+      { headers: { 'x-request-id': 'scrape-retry' } }
+    );
     const written = stdoutSpy.mock.calls.at(-1)?.[0] as string;
     expect(JSON.parse(written)).toEqual({
       success: true,
       scrape_id: 'scrape-9',
+      requestId: 'scrape-retry',
       data: {
         exchange: [
           {

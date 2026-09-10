@@ -3,8 +3,12 @@
  */
 
 import type { ScrapeFormat } from './scrape';
+import type {
+  SearchSourceInput,
+  AlexandriaResponse,
+} from '../utils/alexandria';
 
-export type SearchSource = 'web' | 'images' | 'news' | 'exchange';
+export type SearchSource = SearchSourceInput;
 export type SearchCategory = 'github' | 'research' | 'pdf' | 'developer';
 
 export interface SearchOptions {
@@ -18,6 +22,7 @@ export interface SearchOptions {
   limit?: number;
   /** Sources to search: web, images, news, exchange (default: web) */
   sources?: SearchSource[];
+  skills?: boolean;
   /** Categories to filter results: github, research, pdf, developer */
   categories?: SearchCategory[];
   /** Time-based search parameter (e.g., qdr:h, qdr:d, qdr:w, qdr:m, qdr:y) */
@@ -126,6 +131,8 @@ export interface ExchangeSearchResult {
 }
 
 export interface SearchResultData {
+  alexandria?: AlexandriaResponse;
+  skills?: Array<Record<string, unknown>>;
   web?: WebSearchResult[];
   images?: ImageSearchResult[];
   news?: NewsSearchResult[];

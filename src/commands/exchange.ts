@@ -20,6 +20,7 @@ import type {
 } from '../types/exchange';
 import { getClient, isKeylessMode } from '../utils/client';
 import { writeOutput } from '../utils/output';
+import { randomUUID } from 'node:crypto';
 
 export const EXCHANGE_KEY_REQUIRED =
   'Exchange requires a Firecrawl API key on a team with Exchange access. ' +
@@ -182,7 +183,12 @@ export async function executeExchangeDiscover(
 export async function executeExchangeRetrieve(
   options: ExchangeRetrieveOptions
 ): Promise<ExchangeRetrieveResult> {
+  const requestId = options.requestId ?? randomUUID();
   try {
+    if (!/^[A-Za-z0-9._:-]{1,128}$/.test(requestId))
+      throw new Error(
+        'Invalid --request-id. Use 1–128 letters, digits, dots, underscores, colons or hyphens.'
+      );
     assertExchangeKeyed(options.apiKey, options.apiUrl);
     if (!options.calls || options.calls.length === 0) {
       throw new Error('At least one provider/capability address is required.');
@@ -202,7 +208,9 @@ export async function executeExchangeRetrieve(
     }
 
     const app = getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
-    const response = await (app as any).http.post('/v2/scrape', body);
+    const response = await (app as any).http.post('/v2/scrape', body, {
+      headers: { 'x-request-id': requestId },
+    });
     const envelope = (response?.data ?? {}) as ExchangeScrapeResponse;
 
     if (envelope.success === false) {
@@ -212,11 +220,12 @@ export async function executeExchangeRetrieve(
     return {
       success: true,
       scrapeId: envelope.scrape_id,
+      requestId,
       exchange: envelope.data?.exchange ?? [],
       creditsCost: envelope.data?.creditsCost,
     };
   } catch (error) {
-    return { success: false, error: exchangeErrorMessage(error) };
+    return { success: false, requestId, error: exchangeErrorMessage(error) };
   }
 }
 
@@ -533,9 +542,15 @@ export async function handleExchangeRetrieveCommand(
   options: ExchangeRetrieveOptions
 ): Promise<void> {
   const result = await executeExchangeRetrieve(options);
+  if (result.requestId)
+    process.stderr.write(`Request ID: ${result.requestId}\n`);
 
   if (!result.success) {
     console.error('Error:', result.error);
+    if (result.requestId)
+      process.stderr.write(
+        `If retrying the identical payload, reuse --request-id ${result.requestId}. Do not replace the ID for pending or uncertain execution.\n`
+      );
     process.exit(1);
   }
 
@@ -545,6 +560,7 @@ export async function handleExchangeRetrieveCommand(
 
   const jsonPayload: Record<string, unknown> = {
     success: true,
+    requestId: result.requestId,
     data: {
       exchange: result.exchange ?? [],
       creditsCost: result.creditsCost,

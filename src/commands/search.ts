@@ -15,7 +15,12 @@ import type {
 } from '../types/search';
 import { getClient, isKeylessMode, keylessRequest } from '../utils/client';
 import { writeOutput } from '../utils/output';
-import { assertExchangeKeyed } from './exchange';
+import { assertExchangeKeyed, exchangeErrorMessage } from './exchange';
+import {
+  normalizeSources,
+  hasAlexandria,
+  formatAlexandria,
+} from '../utils/alexandria';
 
 /**
  * Execute search command
@@ -38,13 +43,29 @@ export async function executeSearch(
     if (options.sources && options.sources.length > 0) {
       // The exchange source is gated per team; the keyless tier has no team,
       // so refuse here rather than surface an opaque 403.
-      if (options.sources.includes('exchange')) {
+      if (hasAlexandria(options.sources)) {
         assertExchangeKeyed(options.apiKey, options.apiUrl);
       }
-      searchParams.sources = options.sources.map((source) => ({
-        type: source,
-      }));
+      searchParams.sources = normalizeSources(options.sources).map((source) =>
+        typeof source === 'string' ? { type: source } : source
+      );
     }
+    if (options.skills) {
+      assertExchangeKeyed(options.apiKey, options.apiUrl);
+      searchParams.skills = true;
+    }
+    if (
+      !options.query.trim() &&
+      (!hasAlexandria(options.sources) ||
+        (options.sources ?? []).some((source) =>
+          ['web', 'news', 'images'].includes(
+            typeof source === 'string' ? source : source.type
+          )
+        ))
+    )
+      throw new Error(
+        'A query is required for web search. Use --sources alexandria --mode browse to list tools.'
+      );
 
     // Add categories if specified
     if (options.categories && options.categories.length > 0) {
@@ -101,7 +122,7 @@ export async function executeSearch(
     }
 
     const searchBody = {
-      query: options.query,
+      ...(options.query.trim() ? { query: options.query } : {}),
       ...searchParams,
     };
 
@@ -128,6 +149,8 @@ export async function executeSearch(
     const payload = (envelope.data ?? {}) as Record<string, any>;
 
     const data: SearchResultData = {};
+    if (payload.alexandria) data.alexandria = payload.alexandria;
+    if (payload.skills) data.skills = payload.skills;
     if (payload.web) data.web = payload.web as WebSearchResult[];
     if (payload.images) data.images = payload.images as ImageSearchResult[];
     if (payload.news) data.news = payload.news as NewsSearchResult[];
@@ -140,6 +163,8 @@ export async function executeSearch(
     // exactly as received.
     if (payload.exchange)
       data.exchange = payload.exchange as ExchangeSearchResult[];
+    if (payload['exchange-providers'])
+      data.exchange = payload['exchange-providers'];
 
     return {
       success: true,
@@ -151,7 +176,7 @@ export async function executeSearch(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: exchangeErrorMessage(error),
     };
   }
 }
@@ -316,6 +341,9 @@ function formatSearchReadable(
     }
   }
 
+  if (data.alexandria) lines.push(formatAlexandria(data.alexandria));
+  if (data.skills)
+    lines.push(`Contextual tools: ${JSON.stringify(data.skills, null, 2)}`);
   return lines.join('\n');
 }
 
@@ -342,7 +370,9 @@ export async function handleSearchCommand(
     (result.data.images && result.data.images.length > 0) ||
     (result.data.news && result.data.news.length > 0) ||
     (result.data.developer && result.data.developer.length > 0) ||
-    (result.data.exchange && result.data.exchange.length > 0);
+    (result.data.exchange && result.data.exchange.length > 0) ||
+    result.data.alexandria ||
+    result.data.skills?.length;
 
   if (!hasResults) {
     console.log('No results found.');

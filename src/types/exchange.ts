@@ -42,6 +42,7 @@ export interface ExchangeDiscoverOptions extends ExchangeCommonOptions {
 }
 
 export interface ExchangeRetrieveOptions extends ExchangeCommonOptions {
+  requestId?: string;
   /** 1..10 capabilities to execute in one request */
   calls: ExchangeCall[];
   /** Timeout in milliseconds forwarded to /v2/scrape */
@@ -90,6 +91,7 @@ export interface ExchangeDiscoverResult {
 }
 
 export interface ExchangeRetrieveResult {
+  requestId?: string;
   success: boolean;
   scrapeId?: string;
   exchange?: ExchangeScrapeResult[];

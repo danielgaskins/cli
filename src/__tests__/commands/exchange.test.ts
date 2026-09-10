@@ -302,23 +302,48 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     });
 
     expect(mockHttpPost).toHaveBeenCalledTimes(1);
-    expect(mockHttpPost).toHaveBeenCalledWith('/v2/scrape', {
-      exchange: [
-        {
-          provider: 'fred',
-          capability: 'series/observations',
-          options: { series_id: 'CPIAUCSL' },
-        },
-        { provider: 'fred', capability: 'series/search' },
-      ],
-      integration: 'cli',
-      timeout: 30000,
-    });
+    expect(mockHttpPost).toHaveBeenCalledWith(
+      '/v2/scrape',
+      {
+        exchange: [
+          {
+            provider: 'fred',
+            capability: 'series/observations',
+            options: { series_id: 'CPIAUCSL' },
+          },
+          { provider: 'fred', capability: 'series/search' },
+        ],
+        integration: 'cli',
+        timeout: 30000,
+      },
+      { headers: { 'x-request-id': result.requestId } }
+    );
     expect(result).toEqual({
       success: true,
       scrapeId: 'scrape-1',
+      requestId: expect.any(String),
       exchange: [successItem, failedItem],
       creditsCost: 1,
+    });
+  });
+
+  it('reuses the same execution ID on a manual retry after an uncertain failure', async () => {
+    const calls = [{ provider: 'fred', capability: 'series/observations' }];
+    mockHttpPost
+      .mockRejectedValueOnce(new Error('Connection reset'))
+      .mockResolvedValueOnce({
+        data: { success: true, data: { exchange: [] } },
+      });
+    const first = await executeExchangeRetrieve({ calls });
+    expect(first.success).toBe(false);
+    const retry = await executeExchangeRetrieve({
+      calls,
+      requestId: first.requestId,
+    });
+    expect(retry.requestId).toBe(first.requestId);
+    expect(mockHttpPost.mock.calls[0]).toEqual(mockHttpPost.mock.calls[1]);
+    expect(mockHttpPost.mock.calls[0][2]).toEqual({
+      headers: { 'x-request-id': first.requestId },
     });
   });
 
@@ -335,10 +360,14 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
       calls: [{ provider: 'fred', capability: 'series/observations' }],
     });
 
-    expect(mockHttpPost).toHaveBeenCalledWith('/v2/scrape', {
-      exchange: [{ provider: 'fred', capability: 'series/observations' }],
-      integration: 'cli',
-    });
+    expect(mockHttpPost).toHaveBeenCalledWith(
+      '/v2/scrape',
+      {
+        exchange: [{ provider: 'fred', capability: 'series/observations' }],
+        integration: 'cli',
+      },
+      { headers: { 'x-request-id': expect.any(String) } }
+    );
   });
 
   it('relays the 403 body when the team has no Exchange flag', async () => {
@@ -355,6 +384,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
 
     expect(result).toEqual({
       success: false,
+      requestId: expect.any(String),
       error: 'Exchange is not enabled for this team.',
     });
   });
@@ -366,7 +396,11 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
       calls: [{ provider: 'fred', capability: 'series/observations' }],
     });
 
-    expect(result).toEqual({ success: false, error: EXCHANGE_KEY_REQUIRED });
+    expect(result).toEqual({
+      success: false,
+      requestId: expect.any(String),
+      error: EXCHANGE_KEY_REQUIRED,
+    });
     expect(mockHttpPost).not.toHaveBeenCalled();
   });
 
@@ -573,6 +607,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     expect(JSON.parse(writtenOutput())).toEqual({
       success: true,
+      requestId: expect.any(String),
       scrape_id: 'scrape-1',
       data: { exchange: [successItem], creditsCost: 1 },
     });

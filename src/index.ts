@@ -26,6 +26,8 @@ import { handleMapCommand } from './commands/map';
 import { handleParseCommand } from './commands/parse';
 import { createMonitorCommand } from './commands/monitor';
 import { handleSearchCommand } from './commands/search';
+import { addAlexandriaOptions, parseSearchSources } from './utils/alexandria';
+import { handleSkillCommand } from './commands/skills';
 import { handleDeveloperSearchCommand } from './commands/developer';
 import {
   handleInspectPaperCommand,
@@ -439,6 +441,10 @@ function createScrapeCommand(): Command {
       'JSON options for the --exchange capability at the same position (repeatable)',
       collectRepeatable
     )
+    .option(
+      '--request-id <id>',
+      'Execution ID; reuse for retries of the same Exchange payload'
+    )
 
     .action(async (positionalArgs, options) => {
       // Collect URLs from positional args and --url option
@@ -473,6 +479,7 @@ function createScrapeCommand(): Command {
           {
             apiKey: options.apiKey,
             apiUrl: options.apiUrl,
+            requestId: options.requestId,
             output: options.output,
             json: options.json,
             pretty: options.pretty,
@@ -952,8 +959,8 @@ Max upload size: 50 MB
  */
 function createSearchCommand(): Command {
   const searchCmd = new Command('search')
-    .description('Search the web using Firecrawl')
-    .argument('<query>', 'Search query')
+    .description('Search the web or discover Alexandria tools')
+    .argument('[query]', 'Search query; optional for Alexandria browsing')
     .option(
       '--limit <number>',
       'Maximum number of results (default: 5, max: 100)',
@@ -961,7 +968,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--sources <sources>',
-      'Comma-separated sources to search: web, images, news, exchange (default: web). exchange adds free Exchange capability hits (data providers, not documents) and needs an API key on a team with Exchange access; execute a hit with `firecrawl exchange retrieve`.'
+      'Sources as comma-separated names or a JSON array: web, images, news, alexandria (default: web). Alexandria discovers accessible tools for free; exchange is a compatibility alias.'
     )
     .option(
       '--categories <categories>',
@@ -1020,23 +1027,15 @@ function createSearchCommand(): Command {
     // )
     .option('--json', 'Output as compact JSON', false)
     .action(async (query, options) => {
-      // Parse sources
       let sources: SearchSource[] | undefined;
-      if (options.sources) {
-        sources = options.sources
-          .split(',')
-          .map((s: string) => s.trim().toLowerCase()) as SearchSource[];
-
-        // Validate sources
-        const validSources = ['web', 'images', 'news', 'exchange'];
-        for (const source of sources) {
-          if (!validSources.includes(source)) {
-            console.error(
-              `Error: Invalid source "${source}". Valid sources: ${validSources.join(', ')}`
-            );
-            process.exit(1);
-          }
-        }
+      try {
+        sources = parseSearchSources(options.sources, options);
+      } catch (error) {
+        console.error(
+          'Error:',
+          error instanceof Error ? error.message : String(error)
+        );
+        process.exit(1);
       }
 
       // Parse categories
@@ -1067,9 +1066,10 @@ function createSearchCommand(): Command {
       }
 
       const searchOptions = {
-        query,
+        query: query ?? '',
         limit: options.limit,
         sources,
+        skills: options.skills,
         categories,
         tbs: options.tbs,
         location: options.location,
@@ -1090,7 +1090,7 @@ function createSearchCommand(): Command {
       await handleSearchCommand(searchOptions);
     });
 
-  return searchCmd;
+  return addAlexandriaOptions(searchCmd);
 }
 
 /**
@@ -1111,7 +1111,7 @@ Examples:
   $ firecrawl exchange discover finance fred series/observations   # full contract
   $ firecrawl exchange discover --query "balance sheet" --limit 8  # semantic lookup
   $ firecrawl exchange retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
-  $ firecrawl search "nvidia balance sheet" --sources web,exchange --json`
+  $ firecrawl search "nvidia balance sheet" --sources web,alexandria --json`
     );
 
   exchangeCmd
@@ -1173,6 +1173,10 @@ Examples:
       'JSON options for the address at the same position (repeatable)',
       collectRepeatable
     )
+    .option(
+      '--request-id <id>',
+      'Execution ID; reuse for retries of the same payload'
+    )
     .option('--timeout <ms>', 'Timeout in milliseconds', parseInt)
     .option(
       '-k, --api-key <key>',
@@ -1195,6 +1199,7 @@ Examples:
       }
       await handleExchangeRetrieveCommand({
         calls,
+        requestId: options.requestId,
         timeout: options.timeout,
         apiKey: options.apiKey,
         apiUrl: options.apiUrl,
@@ -1204,6 +1209,37 @@ Examples:
       });
     });
 
+  exchangeCmd
+    .command('tools')
+    .description(
+      'Resolve contextual tools for a query and/or page URLs, without executing them'
+    )
+    .argument('[urls...]', 'Page URLs from search or scrape')
+    .addOption(
+      new Option(
+        '--context <surface>',
+        'Apply search or scrape placement rules'
+      )
+        .choices(['search', 'scrape'])
+        .default('search')
+    )
+    .option('-q, --query <text>', 'Also match configured query mentions')
+    .option('-k, --api-key <key>', 'Firecrawl API key')
+    .option('--api-url <url>', 'API URL')
+    .option('-o, --output <path>', 'Output file path')
+    .action(async (urls: string[], options) =>
+      handleSkillCommand({ ...options, urls })
+    );
+  exchangeCmd
+    .command('skill')
+    .description('Read a resolved tool skill document as Markdown')
+    .argument('<id>', 'Skill ID returned by contextual tool lookup')
+    .option('-k, --api-key <key>', 'Firecrawl API key')
+    .option('--api-url <url>', 'API URL')
+    .option('-o, --output <path>', 'Output file path')
+    .action(async (id: string, options) =>
+      handleSkillCommand({ ...options, id })
+    );
   return exchangeCmd;
 }
 

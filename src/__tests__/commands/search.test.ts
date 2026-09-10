@@ -74,7 +74,7 @@ describe('executeSearch', () => {
       similarity: 0.8123,
     };
 
-    it('sends exchange as a bare source entry beside web', async () => {
+    it('normalizes the legacy exchange source to alexandria beside web', async () => {
       mockHttpPost.mockResolvedValue(
         mockSearchResponse({ web: [], exchange: [exchangeHit] })
       );
@@ -88,8 +88,39 @@ describe('executeSearch', () => {
         query: 'nvidia balance sheet',
         limit: undefined,
         integration: 'cli',
-        sources: [{ type: 'web' }, { type: 'exchange' }],
+        sources: [{ type: 'web' }, { type: 'alexandria' }],
       });
+    });
+
+    it('preserves browse filters, disclosure, pagination and the Alexandria envelope', async () => {
+      const source = {
+        type: 'alexandria',
+        mode: 'browse',
+        providers: ['particle'],
+        domains: ['podcasts.apple.com'],
+        level: 'tools',
+        expand: ['options', 'response', 'examples'],
+        languages: ['python', 'curl'],
+        cursor: 'next-page',
+        limit: 5,
+      };
+      const alexandria = {
+        status: 'available',
+        mode: 'browse',
+        level: 'tools',
+        items: [
+          { id: 'particle/podcasts/search', next: { sources: [source] } },
+        ],
+        total: 20,
+        nextCursor: 'page-3',
+      };
+      mockHttpPost.mockResolvedValue(mockSearchResponse({ alexandria } as any));
+      const result = await executeSearch({ query: '', sources: [source] });
+      expect(mockHttpPost.mock.calls[0][1]).toMatchObject({
+        sources: [source],
+      });
+      expect(mockHttpPost.mock.calls[0][1]).not.toHaveProperty('query');
+      expect(result.data?.alexandria).toEqual(alexandria);
     });
 
     it('passes data.exchange, id and creditsUsed through untouched', async () => {
