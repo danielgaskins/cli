@@ -1,4 +1,5 @@
 import { reportFeedbackInvitation } from './feedback-invitation';
+import { feedbackPreferenceHeaders } from './feedback-settings';
 /**
  * Firecrawl client utility
  * Provides a singleton client instance initialized with global configuration
@@ -37,7 +38,10 @@ export async function keylessRequest(
   const apiUrl = (getConfig().apiUrl || DEFAULT_API_URL).replace(/\/$/, '');
   const response = await fetch(`${apiUrl}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...feedbackPreferenceHeaders(),
+    },
     body: JSON.stringify(body),
   });
   const json: any = await response.json().catch(() => ({}));

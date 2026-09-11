@@ -2,6 +2,7 @@ import {
   reportFeedbackInvitation,
   filterFeedbackMetadata,
 } from '../utils/feedback-invitation';
+import { feedbackPreferenceHeaders } from '../utils/feedback-settings';
 /**
  * Parse command implementation
  *
@@ -188,8 +189,10 @@ export async function executeParse(
   try {
     const response = await fetch(`${apiUrl}/v2/parse`, {
       method: 'POST',
-      headers:
-        !keyless && apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
+      headers: {
+        ...(!keyless && apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        ...feedbackPreferenceHeaders(),
+      },
       body: form,
     });
 

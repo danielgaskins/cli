@@ -496,7 +496,9 @@ Keep notes and metadata small. Do not send raw scrape or parse outputs as
 feedback.
 
 Set `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` to make `firecrawl feedback` skip
-endpoint feedback calls silently.
+endpoint feedback calls silently. Search, Scrape, and Parse also send
+`x-firecrawl-no-feedback: 1` so the API does not issue or count invitations
+that the CLI suppresses.
 
 #### Feedback Options
 
