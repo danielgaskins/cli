@@ -92,35 +92,16 @@ describe('executeSearch', () => {
       });
     });
 
-    it('preserves browse filters, disclosure, pagination and the Alexandria envelope', async () => {
-      const source = {
-        type: 'alexandria',
-        mode: 'browse',
-        providers: ['particle'],
-        domains: ['podcasts.apple.com'],
-        level: 'tools',
-        expand: ['options', 'response', 'examples'],
-        languages: ['python', 'curl'],
-        cursor: 'next-page',
-        limit: 5,
-      };
-      const alexandria = {
-        status: 'available',
-        mode: 'browse',
-        level: 'tools',
-        items: [
-          { id: 'particle/podcasts/search', next: { sources: [source] } },
-        ],
-        total: 20,
-        nextCursor: 'page-3',
-      };
-      mockHttpPost.mockResolvedValue(mockSearchResponse({ alexandria } as any));
-      const result = await executeSearch({ query: '', sources: [source] });
-      expect(mockHttpPost.mock.calls[0][1]).toMatchObject({
-        sources: [source],
-      });
-      expect(mockHttpPost.mock.calls[0][1]).not.toHaveProperty('query');
-      expect(result.data?.alexandria).toEqual(alexandria);
+    it('preserves unified contracts and rejects catalogue browsing in search', async () => {
+      const tools = [{ id: 'particle/podcasts/episodes/search', matchedBy: ['semantic', 'domain'], matchedUrls: ['https://podcasts.apple.com'], options: [{ name: 'semantic_search', type: 'string' }] }];
+      mockHttpPost.mockResolvedValue(mockSearchResponse({ tools }));
+      const result = await executeSearch({ query: 'podcast episodes', sources: ['alexandria'], skills: true });
+      expect(result.data?.tools).toEqual(tools);
+      expect(mockHttpPost.mock.calls[0][1]).toMatchObject({ skills: true });
+      mockHttpPost.mockClear();
+      expect((await executeSearch({ query: '', sources: ['alexandria'] })).success).toBe(false);
+      expect((await executeSearch({ query: 'podcasts', sources: [{type: 'alexandria', mode: 'browse'}] })).success).toBe(false);
+      expect(mockHttpPost).not.toHaveBeenCalled();
     });
 
     it('passes data.exchange, id and creditsUsed through untouched', async () => {

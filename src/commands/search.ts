@@ -19,7 +19,7 @@ import { assertExchangeKeyed, exchangeErrorMessage } from './exchange';
 import {
   normalizeSources,
   hasAlexandria,
-  formatAlexandria,
+  formatTools,
 } from '../utils/alexandria';
 
 /**
@@ -54,18 +54,7 @@ export async function executeSearch(
       assertExchangeKeyed(options.apiKey, options.apiUrl);
       searchParams.skills = true;
     }
-    if (
-      !options.query.trim() &&
-      (!hasAlexandria(options.sources) ||
-        (options.sources ?? []).some((source) =>
-          ['web', 'news', 'images'].includes(
-            typeof source === 'string' ? source : source.type
-          )
-        ))
-    )
-      throw new Error(
-        'A query is required for web search. Use --sources alexandria --mode browse to list tools.'
-      );
+    if (!options.query.trim()) throw new Error('A query is required for search. Use firecrawl find-tools for catalogue lookup.');
 
     // Add categories if specified
     if (options.categories && options.categories.length > 0) {
@@ -149,8 +138,7 @@ export async function executeSearch(
     const payload = (envelope.data ?? {}) as Record<string, any>;
 
     const data: SearchResultData = {};
-    if (payload.alexandria) data.alexandria = payload.alexandria;
-    if (payload.skills) data.skills = payload.skills;
+    if (payload.tools) data.tools = payload.tools;
     if (payload.web) data.web = payload.web as WebSearchResult[];
     if (payload.images) data.images = payload.images as ImageSearchResult[];
     if (payload.news) data.news = payload.news as NewsSearchResult[];
@@ -341,9 +329,7 @@ function formatSearchReadable(
     }
   }
 
-  if (data.alexandria) lines.push(formatAlexandria(data.alexandria));
-  if (data.skills)
-    lines.push(`Contextual tools: ${JSON.stringify(data.skills, null, 2)}`);
+  if (data.tools) lines.push(formatTools(data.tools));
   return lines.join('\n');
 }
 
@@ -371,8 +357,7 @@ export async function handleSearchCommand(
     (result.data.news && result.data.news.length > 0) ||
     (result.data.developer && result.data.developer.length > 0) ||
     (result.data.exchange && result.data.exchange.length > 0) ||
-    result.data.alexandria ||
-    result.data.skills?.length;
+    result.data.tools?.length;
 
   if (!hasResults) {
     console.log('No results found.');

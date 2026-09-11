@@ -28,6 +28,7 @@ import { createMonitorCommand } from './commands/monitor';
 import { handleSearchCommand } from './commands/search';
 import { addAlexandriaOptions, parseSearchSources } from './utils/alexandria';
 import { handleSkillCommand } from './commands/skills';
+import { createFindToolsCommand } from './commands/find-tools';
 import { handleDeveloperSearchCommand } from './commands/developer';
 import {
   handleInspectPaperCommand,
@@ -960,7 +961,7 @@ Max upload size: 50 MB
 function createSearchCommand(): Command {
   const searchCmd = new Command('search')
     .description('Search the web or discover Alexandria tools')
-    .argument('[query]', 'Search query; optional for Alexandria browsing')
+    .argument('<query>', 'Semantic search query')
     .option(
       '--limit <number>',
       'Maximum number of results (default: 5, max: 100)',
@@ -1029,7 +1030,7 @@ function createSearchCommand(): Command {
     .action(async (query, options) => {
       let sources: SearchSource[] | undefined;
       try {
-        sources = parseSearchSources(options.sources, options);
+        sources = parseSearchSources(options.sources);
       } catch (error) {
         console.error(
           'Error:',
@@ -1209,27 +1210,7 @@ Examples:
       });
     });
 
-  exchangeCmd
-    .command('tools')
-    .description(
-      'Resolve contextual tools for a query and/or page URLs, without executing them'
-    )
-    .argument('[urls...]', 'Page URLs from search or scrape')
-    .addOption(
-      new Option(
-        '--context <surface>',
-        'Apply search or scrape placement rules'
-      )
-        .choices(['search', 'scrape'])
-        .default('search')
-    )
-    .option('-q, --query <text>', 'Also match configured query mentions')
-    .option('-k, --api-key <key>', 'Firecrawl API key')
-    .option('--api-url <url>', 'API URL')
-    .option('-o, --output <path>', 'Output file path')
-    .action(async (urls: string[], options) =>
-      handleSkillCommand({ ...options, urls })
-    );
+  exchangeCmd.addCommand(createFindToolsCommand('tools'));
   exchangeCmd
     .command('skill')
     .description('Read a resolved tool skill document as Markdown')
@@ -2288,6 +2269,7 @@ program.addCommand(createParseCommand());
 program.addCommand(createMonitorCommand());
 program.addCommand(createSearchCommand());
 program.addCommand(createExchangeCommand());
+program.addCommand(createFindToolsCommand());
 program.addCommand(createDeveloperCommand());
 program.addCommand(createResearchCommand());
 program.addCommand(createFeedbackCommand());

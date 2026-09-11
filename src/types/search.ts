@@ -5,7 +5,6 @@
 import type { ScrapeFormat } from './scrape';
 import type {
   SearchSourceInput,
-  AlexandriaResponse,
 } from '../utils/alexandria';
 
 export type SearchSource = SearchSourceInput;
@@ -131,8 +130,7 @@ export interface ExchangeSearchResult {
 }
 
 export interface SearchResultData {
-  alexandria?: AlexandriaResponse;
-  skills?: Array<Record<string, unknown>>;
+  tools?: Array<Record<string, any>>;
   web?: WebSearchResult[];
   images?: ImageSearchResult[];
   news?: NewsSearchResult[];

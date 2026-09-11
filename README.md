@@ -338,7 +338,7 @@ firecrawl search "AI data tools"
 | Option                       | Description                                                                                                                                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                                   |
-| `--sources <sources>`        | Comma-separated names or JSON source objects: `web`, `images`, `news`, `alexandria` (default: web). Alexandria returns `data.alexandria` -- see [`exchange`](#exchange---data-providers) |
+| `--sources <sources>`        | Comma-separated names or JSON source objects: `web`, `images`, `news`, `alexandria` (default: web). Alexandria returns contracts in `data.tools` -- see [`exchange`](#exchange---data-providers) |
 | `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`                |
 | `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                              |
 | `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                                |
@@ -386,30 +386,42 @@ firecrawl search "AI startups funding" --sources news --tbs qdr:w --limit 15
 ### Alexandria discovery
 
 ```bash
+# Semantic discovery alongside web results
+firecrawl search "podcast transcripts" --sources web,alexandria --limit 2 --json
+
+# Include tools matched to query mentions and result domains
 firecrawl search "podcast transcripts" --sources web,alexandria --skills --json
-firecrawl search --sources alexandria --mode browse --tool-categories finance --level providers --json
-firecrawl search --sources alexandria --providers particle --level tools --expand options,response,examples --languages javascript,python,curl --limit 5 --json
-firecrawl search --sources '[{"type":"alexandria","domains":["podcasts.apple.com"],"level":"groups"}]' --json
-firecrawl exchange tools https://podcasts.apple.com/us/ --query spotify
-firecrawl exchange skill <id>
+
+# Explore providers without a search query
+firecrawl find-tools --categories finance --limit 2 --json
+firecrawl find-tools https://podcasts.apple.com --json
+
+# Get a specific tool's inputs, response, and examples
+firecrawl find-tools --providers particle \
+  --capabilities podcasts/episodes/search \
+  --expand options,response,examples --limit 2 --json
+
+# Follow an item or pagination request returned by Find Tools
+firecrawl find-tools --request '<next request JSON>' --json
 ```
 
-Alexandria accepts `--mode semantic|browse`, `--tool-categories`, `--providers`,
-`--domains`, `--groups`, `--capabilities`, `--level categories|providers|groups|tools`,
-`--expand options,response,examples`, `--languages javascript,python,curl`,
-`--limit`, and `--cursor`. Lists use commas. `--sources` also accepts the API's
-mixed string/object JSON array; this preserves every progressive disclosure knob.
-Omit the query for catalogue-only browsing. `exchange` remains a source alias
-and is sent as `alexandria`.
+Search requires a query. `sources: ["alexandria"]` finds tools by meaning;
+`--skills` adds contextual matches to the same `data.tools` array. Each contract
+includes inputs, response fields, examples, price, `matchedBy`, and `matchedUrls`.
+Check the response's `warning` if discovery is unavailable. The legacy `exchange`
+source name is normalized to `alexandria`.
 
-`data.alexandria` preserves `status`, `mode`, `level`, `items`, `total` and
-`nextCursor`. Every item's `next` is a complete search request: reuse its query
-and JSON sources to expand. Keep query and filters when paging. `unavailable`
-is distinct from zero matches. Contextual tools match provider-configured query
-terms and domains; `exchange skill` reads their Markdown contracts. Catalogue
-visibility comes from authenticated team access. Web search and provider
-execution retain their own charges. These controls require the Alexandria API
-deployment; a local CLI build does not deploy the backend.
+`find-tools` uses the zero-credit Find Tools capability through `/v2/scrape`.
+Filter with `--providers`, `--categories`, `--groups`, `--capabilities`, or page URLs.
+`--level providers|groups|tools` is inferred when omitted; `--expand` selects
+contract sections at the tools level. Lists use commas. An item's `next` reveals
+more detail; the result's top-level `next` fetches another page. Both are complete
+Exchange calls accepted by `--request`. `exchange tools` is an alias.
+
+These integrations require the matching API deployment and authenticated team
+access. Discovery does not execute the tools it returns. Web search and selected
+tool execution retain their own charges. The older `exchange discover` and
+`exchange skill` commands remain available for existing proxy integrations.
 
 ### `exchange` - Data providers
 
