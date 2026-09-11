@@ -1,6 +1,11 @@
+import { isEndpointFeedbackDisabledLocally } from '../utils/feedback-settings';
+export {
+  isEndpointFeedbackDisabledLocally,
+  ENDPOINT_FEEDBACK_OPT_OUT_ENV_VARS,
+} from '../utils/feedback-settings';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
-import { getConfig, isCustomApiUrl, validateConfig } from '../utils/config';
+import { getConfig } from '../utils/config';
 import { getClient } from '../utils/client';
 import {
   parseMissingContentArg,
@@ -16,6 +21,9 @@ export interface EndpointFeedbackOptions {
   endpoint: EndpointFeedbackEndpoint;
   jobId: string;
   rating: SearchFeedbackRating;
+  task?: string;
+  assessment?: string;
+  observations?: Record<string, unknown>[];
   issues?: string[];
   tags?: string[];
   note?: string;
@@ -34,6 +42,8 @@ export interface EndpointFeedbackOptions {
 }
 
 export type EndpointFeedbackErrorCode =
+  | 'DAILY_LIMIT_REACHED'
+  | 'FEEDBACK_UNAVAILABLE'
   | 'JOB_NOT_FOUND'
   | 'SEARCH_NOT_FOUND'
   | 'FEEDBACK_WINDOW_EXPIRED'
@@ -60,12 +70,6 @@ export interface EndpointFeedbackResult {
   disabledSource?: 'env' | 'team';
 }
 
-export const ENDPOINT_FEEDBACK_OPT_OUT_ENV_VARS = [
-  'FIRECRAWL_NO_ENDPOINT_FEEDBACK',
-  'FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK',
-] as const;
-
-const TRUTHY = new Set(['1', 'true', 'yes', 'on']);
 const DEFAULT_API_URL = 'https://api.firecrawl.dev';
 
 export const ENDPOINT_FEEDBACK_ENDPOINTS: EndpointFeedbackEndpoint[] = [
@@ -188,16 +192,25 @@ export function parseEndpointFeedbackRating(
   return rating as SearchFeedbackRating;
 }
 
-export function isEndpointFeedbackDisabledLocally(
-  env: NodeJS.ProcessEnv = process.env
-): boolean {
-  for (const key of ENDPOINT_FEEDBACK_OPT_OUT_ENV_VARS) {
-    const value = env[key];
-    if (typeof value === 'string' && TRUTHY.has(value.trim().toLowerCase())) {
-      return true;
-    }
+export function parseObservations(
+  raw?: string,
+  filePath?: string
+): Record<string, unknown>[] | undefined {
+  if (raw === undefined && filePath === undefined) return undefined;
+  if (raw !== undefined && filePath !== undefined)
+    throw new Error('Provide either --observations or --observations-file.');
+  const value: unknown = JSON.parse(raw ?? readFileSync(filePath!, 'utf8'));
+  if (
+    !Array.isArray(value) ||
+    value.length < 1 ||
+    value.length > 20 ||
+    value.some(
+      (item) => !item || typeof item !== 'object' || Array.isArray(item)
+    )
+  ) {
+    throw new Error('Observations must be a JSON array of 1-20 objects.');
   }
-  return false;
+  return value;
 }
 
 export function parseEndpointFeedbackCliOptions(options: {
@@ -209,8 +222,14 @@ export function parseEndpointFeedbackCliOptions(options: {
   valuableSources?: string;
   missingContent?: string | string[];
   rating?: string;
+  observations?: string;
+  observationsFile?: string;
 }) {
   return {
+    observations: parseObservations(
+      options.observations,
+      options.observationsFile
+    ),
     rating: parseEndpointFeedbackRating(String(options.rating || '')),
     issues: parseFeedbackListArg(options.issues, '--issues'),
     tags: parseFeedbackListArg(options.tags, '--tags'),
@@ -244,9 +263,6 @@ export async function executeEndpointFeedback(
       /\/$/,
       ''
     );
-    if (!isCustomApiUrl(apiUrl)) {
-      validateConfig(apiKey);
-    }
 
     const body: Record<string, unknown> = {
       endpoint: options.endpoint,
@@ -260,6 +276,9 @@ export async function executeEndpointFeedback(
       ['issues', normalizeList(options.issues)],
       ['tags', normalizeList(options.tags)],
       ['note', options.note],
+      ['task', options.task],
+      ['assessment', options.assessment],
+      ['observations', options.observations],
       ['valuableSources', options.valuableSources],
       ['missingContent', options.missingContent],
       ['querySuggestions', options.querySuggestions],

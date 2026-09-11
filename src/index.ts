@@ -87,7 +87,6 @@ const AUTH_REQUIRED_COMMANDS = [
   'download',
   'crawl',
   'map',
-  'feedback',
   'search-feedback',
   'agent',
   'browser',
@@ -417,6 +416,10 @@ function createScrapeCommand(): Command {
     .option('--actions-file <path>', 'Path to JSON actions file')
     .option('--proxy <proxy>', 'Proxy mode for scraping (e.g., auto, basic)')
 
+    .addHelpText(
+      'after',
+      '\nOptional feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
+    )
     .action(async (positionalArgs, options) => {
       // Collect URLs from positional args and --url option
       let urls: string[] = [];
@@ -866,6 +869,10 @@ Supported file types: .html, .htm, .pdf, .docx, .doc, .odt, .rtf, .xlsx, .xls
 Max upload size: 50 MB
 `
     )
+    .addHelpText(
+      'after',
+      '\nOptional feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
+    )
     .action(async (file: string, options) => {
       let format: string | undefined;
       if (options.html) {
@@ -974,6 +981,10 @@ function createSearchCommand(): Command {
     //   false
     // )
     .option('--json', 'Output as compact JSON', false)
+    .addHelpText(
+      'after',
+      '\nOptional feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
+    )
     .action(async (query, options) => {
       // Parse sources
       let sources: SearchSource[] | undefined;
@@ -1422,7 +1433,9 @@ function createSearchFeedbackCommand(): Command {
  */
 function createFeedbackCommand(): Command {
   const cmd = new Command('feedback')
-    .description('Send feedback on a Firecrawl endpoint job.')
+    .description(
+      'Send optional evidence about a job. Keyless Search, Scrape, and Parse accept one submission per category per UTC day without consuming operation quota.'
+    )
     .argument('<endpoint>', 'Endpoint: search | scrape | parse | map')
     .argument('<jobId>', 'The job id returned by the endpoint')
     .requiredOption('--rating <rating>', 'Overall rating: good | bad | partial')
@@ -1435,6 +1448,22 @@ function createFeedbackCommand(): Command {
       'Comma-separated tags OR JSON array of tags'
     )
     .option('--note <text>', 'Short note describing the feedback')
+    .option(
+      '--task <text>',
+      'Task the output needed to support, required for keyless feedback'
+    )
+    .option(
+      '--assessment <text>',
+      'Meaningful assessment, required for keyless feedback'
+    )
+    .option(
+      '--observations <json>',
+      'JSON array of category-specific observations with kind, detail, and basis (output, source_comparison, or expectation)'
+    )
+    .option(
+      '--observations-file <path>',
+      'Read observations JSON from a file; use only evidence already available'
+    )
     .option(
       '--valuable-sources <urlsOrJson>',
       'Comma-separated URLs OR JSON array of {url, reason} entries'
@@ -1469,6 +1498,15 @@ function createFeedbackCommand(): Command {
       'Suppress output; useful when called in the background by another agent',
       false
     )
+    .addHelpText(
+      'after',
+      '\nKeyless evidence: task, assessment, and each observation detail must contain 10-2000 characters. Submit 1-20 observations.\n' +
+        'Search: kind useful or irrelevant, source web/images/news, and one-based position within that delivered group; or kind missing with topic and optional knownSources URLs.\n' +
+        'Scrape: kind correct, missing, incorrect, or failure; optional location and already-observed retryOutcome.\n' +
+        'Parse: kind correct, text, table, layout, or completeness; optional location.\n' +
+        'All observations require detail and basis: output, source_comparison, or expectation. source_comparison also requires comparison: {reference, detail}.\n' +
+        'Use only evidence already available. One accepted submission per keyless identity, category, and UTC day, shared across clients.'
+    )
     .action(async (endpointArg: string, jobId: string, options: any) => {
       let endpoint;
       try {
@@ -1493,6 +1531,9 @@ function createFeedbackCommand(): Command {
         issues: parsed.issues,
         tags: parsed.tags,
         note: options.note,
+        task: options.task,
+        assessment: options.assessment,
+        observations: parsed.observations,
         valuableSources: parsed.valuableSources,
         missingContent: parsed.missingContent,
         querySuggestions: options.querySuggestions,

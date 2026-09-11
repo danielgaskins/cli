@@ -18,6 +18,10 @@ vi.mock('../../utils/client', async () => {
   };
 });
 
+vi.mock('../../utils/credentials', () => ({
+  loadCredentials: vi.fn(() => null),
+}));
+
 describe('executeEndpointFeedback', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
 
@@ -37,6 +41,48 @@ describe('executeEndpointFeedback', () => {
     vi.clearAllMocks();
     delete process.env.FIRECRAWL_NO_ENDPOINT_FEEDBACK;
     delete process.env.FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK;
+  });
+
+  it('submits category evidence without an API key', async () => {
+    initializeConfig({
+      apiKey: undefined,
+      apiUrl: 'https://api.firecrawl.dev',
+    });
+    delete process.env.FIRECRAWL_API_KEY;
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        feedbackId: 'feedback-1',
+        creditsRefunded: 0,
+      }),
+    });
+    const observations = [
+      {
+        kind: 'table',
+        basis: 'output',
+        detail: 'The table contains the expected column headings.',
+        location: 'Page 2',
+      },
+    ];
+    const result = await executeEndpointFeedback({
+      endpoint: 'parse',
+      jobId: '00000000-0000-4000-8000-000000000001',
+      rating: 'good',
+      task: 'Read the table headings',
+      assessment: 'The output preserved all table headings.',
+      observations,
+    });
+    expect(result.success).toBe(true);
+    const [, init] = mockFetch.mock.calls[0];
+    expect(init.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(init.body)).toMatchObject({
+      endpoint: 'parse',
+      observations,
+      origin: 'cli',
+      integration: 'cli',
+    });
   });
 
   it('posts generic endpoint feedback to /v2/feedback', async () => {

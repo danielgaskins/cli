@@ -1,3 +1,7 @@
+import {
+  reportFeedbackInvitation,
+  filterFeedbackMetadata,
+} from '../utils/feedback-invitation';
 /**
  * Search command implementation
  */
@@ -118,6 +122,8 @@ export async function executeSearch(
       );
       envelope = (httpResponse?.data ?? {}) as Record<string, any>;
     }
+    envelope.metadata = filterFeedbackMetadata(envelope.metadata);
+    reportFeedbackInvitation(envelope.metadata, 'search');
     const payload = (envelope.data ?? {}) as Record<string, any>;
 
     const data: SearchResultData = {};
@@ -135,6 +141,7 @@ export async function executeSearch(
       warning: envelope.warning,
       id: envelope.id,
       creditsUsed: envelope.creditsUsed,
+      metadata: envelope.metadata,
     };
   } catch (error) {
     return {
@@ -315,6 +322,7 @@ export async function handleSearchCommand(
     if (result.warning) {
       jsonOutput.warning = result.warning;
     }
+    if (result.metadata) jsonOutput.metadata = result.metadata;
     if (result.id) {
       jsonOutput.id = result.id;
     }
