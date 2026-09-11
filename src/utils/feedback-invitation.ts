@@ -15,6 +15,7 @@ export function reportFeedbackInvitation(
   metadata: any,
   endpoint: string
 ): void {
+  if (isEndpointFeedbackDisabledLocally()) return;
   metadata = filterFeedbackMetadata(metadata);
   if (typeof metadata?.jobId === 'string') {
     process.stderr.write(`Feedback job (${endpoint}): ${metadata.jobId}\n`);

@@ -31,9 +31,7 @@ describe('feedback invitation output', () => {
       },
       'search'
     );
-    expect(stderr.mock.calls.flat().join('')).not.toContain(
-      'Optional feedback'
-    );
+    expect(stderr).not.toHaveBeenCalled();
   });
   it('does not invent invitations when metadata is absent', () => {
     const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);

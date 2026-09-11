@@ -6,7 +6,6 @@ export {
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname } from 'path';
 import { getConfig } from '../utils/config';
-import { getClient } from '../utils/client';
 import {
   parseMissingContentArg,
   parseValuableSourcesArg,
@@ -253,10 +252,6 @@ export async function executeEndpointFeedback(
   }
 
   try {
-    if (options.apiKey || options.apiUrl) {
-      getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
-    }
-
     const config = getConfig();
     const apiKey = options.apiKey || config.apiKey;
     const apiUrl = (options.apiUrl || config.apiUrl || DEFAULT_API_URL).replace(

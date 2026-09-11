@@ -6,17 +6,8 @@ import {
   parseFeedbackListArg,
   parsePageNumbersArg,
 } from '../../commands/feedback';
-import { getClient } from '../../utils/client';
 import { initializeConfig } from '../../utils/config';
 import { setupTest, teardownTest } from '../utils/mock-client';
-
-vi.mock('../../utils/client', async () => {
-  const actual = await vi.importActual('../../utils/client');
-  return {
-    ...actual,
-    getClient: vi.fn(),
-  };
-});
 
 vi.mock('../../utils/credentials', () => ({
   loadCredentials: vi.fn(() => null),
@@ -39,51 +30,56 @@ describe('executeEndpointFeedback', () => {
   afterEach(() => {
     teardownTest();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     delete process.env.FIRECRAWL_NO_ENDPOINT_FEEDBACK;
     delete process.env.FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK;
   });
 
-  it('submits category evidence without an API key', async () => {
-    initializeConfig({
-      apiKey: undefined,
-      apiUrl: 'https://api.firecrawl.dev',
-    });
-    delete process.env.FIRECRAWL_API_KEY;
-    mockFetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        success: true,
-        feedbackId: 'feedback-1',
-        creditsRefunded: 0,
-      }),
-    });
-    const observations = [
-      {
-        kind: 'table',
-        basis: 'output',
-        detail: 'The table contains the expected column headings.',
-        location: 'Page 2',
-      },
-    ];
-    const result = await executeEndpointFeedback({
-      endpoint: 'parse',
-      jobId: '00000000-0000-4000-8000-000000000001',
-      rating: 'good',
-      task: 'Read the table headings',
-      assessment: 'The output preserved all table headings.',
-      observations,
-    });
-    expect(result.success).toBe(true);
-    const [, init] = mockFetch.mock.calls[0];
-    expect(init.headers.Authorization).toBeUndefined();
-    expect(JSON.parse(init.body)).toMatchObject({
-      endpoint: 'parse',
-      observations,
-      origin: 'cli',
-      integration: 'cli',
-    });
-  });
+  it.each([undefined, 'https://api.firecrawl.dev'])(
+    'submits keyless evidence with API URL %s',
+    async (apiUrl) => {
+      vi.stubEnv('FIRECRAWL_API_KEY', '');
+      initializeConfig({
+        apiKey: undefined,
+        apiUrl: 'https://api.firecrawl.dev',
+      });
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          feedbackId: 'feedback-1',
+          creditsRefunded: 0,
+        }),
+      });
+      const observations = [
+        {
+          kind: 'table',
+          basis: 'output',
+          detail: 'The table contains the expected column headings.',
+          location: 'Page 2',
+        },
+      ];
+      const result = await executeEndpointFeedback({
+        apiUrl,
+        endpoint: 'parse',
+        jobId: '00000000-0000-4000-8000-000000000001',
+        rating: 'good',
+        task: 'Read the table headings',
+        assessment: 'The output preserved all table headings.',
+        observations,
+      });
+      expect(result.success).toBe(true);
+      const [, init] = mockFetch.mock.calls[0];
+      expect(init.headers.Authorization).toBeUndefined();
+      expect(JSON.parse(init.body)).toMatchObject({
+        endpoint: 'parse',
+        observations,
+        origin: 'cli',
+        integration: 'cli',
+      });
+    }
+  );
 
   it('posts generic endpoint feedback to /v2/feedback', async () => {
     mockFetch.mockResolvedValue({
@@ -110,10 +106,6 @@ describe('executeEndpointFeedback', () => {
       apiUrl: 'http://localhost:3002',
     });
 
-    expect(getClient).toHaveBeenCalledWith({
-      apiKey: undefined,
-      apiUrl: 'http://localhost:3002',
-    });
     expect(result).toEqual({
       success: true,
       feedbackId: '0193f6c5-1234-7890-abcd-1234567890ab',
@@ -195,7 +187,6 @@ describe('executeEndpointFeedback', () => {
       creditsRefunded: 0,
     });
 
-    expect(getClient).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -224,7 +215,6 @@ describe('executeEndpointFeedback', () => {
 
       expect(stderrSpy).not.toHaveBeenCalled();
       expect(stdoutSpy).not.toHaveBeenCalled();
-      expect(getClient).not.toHaveBeenCalled();
       expect(mockFetch).not.toHaveBeenCalled();
     } finally {
       exitSpy.mockRestore();
