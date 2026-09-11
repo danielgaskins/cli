@@ -1,7 +1,7 @@
 ---
 name: firecrawl-search
 description: |
-  Web search with full page content. Use when no URL is known: finding sources, articles, or news. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
+  Web search with optional page content and Alexandria tool discovery. Use when no URL is known: finding sources, articles, news, or data-provider tools by intent. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
@@ -9,7 +9,7 @@ allowed-tools:
 
 # firecrawl search
 
-Web search with optional content scraping. Returns search results as JSON, optionally with full page content.
+Web search with optional content scraping and Alexandria tool discovery. JSON groups web results under `data.web` and tool contracts under `data.tools`.
 
 ## Quick start
 
@@ -28,7 +28,23 @@ Run `firecrawl search --help` for the full option list.
 
 `--categories developer` weighs the developer index beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
 
-**Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and one feedback event is sent within the time window (unless opted out).
+## Alexandria tools
+
+```bash
+# Find tool contracts by meaning
+firecrawl search "podcast conversations about AI agents" \
+  --sources alexandria --limit 2 --json -o .firecrawl/tools.json
+
+# Web pages and semantic tools, with optional domain matches
+firecrawl search "podcast conversations about AI agents" \
+  --sources web,alexandria --skills --limit 2 --json -o .firecrawl/web-and-tools.json
+```
+
+Search always needs a non-empty query. `--sources alexandria` searches tools semantically; `--skills` opts into additional contextual matches. Both return contracts in `data.tools`, with `matchedBy` and `matchedUrls` explaining relevance. Omit `--skills` when semantic matches are enough. Discovery does not execute the returned tools.
+
+For a known URL or provider, use `firecrawl find-tools`; catalogue filters belong there. Follow the [Alexandria workflow](../firecrawl/rules/alexandria.md) to read contracts, follow `next`, and execute a selected tool through `scrape --exchange`.
+
+**Done when:** fresh results have been inspected and used for the request, or no matches have been reported. Apply the feedback guidance below when web results were used; free tool discovery does not require a web-search feedback call.
 
 ## Tips
 
@@ -38,9 +54,9 @@ Run `firecrawl search --help` for the full option list.
 - Use `jq` to extract URLs or titles: `jq -r '.data.web[].url' .firecrawl/search.json`
 - Naming convention: `.firecrawl/search-{query}.json` or `.firecrawl/search-{query}-scraped.json`
 
-## Send feedback after every search (refunds 1 credit)
+## Send feedback after using web search results
 
-Search costs 2 credits. After you've actually used the results (or decided they were useless), send structured feedback with `firecrawl search-feedback <id>`. The first feedback per search refunds 1 credit and helps us improve search quality. **Do this once per search**, in the background, after you finish processing the results — it does not block your main task.
+For ordinary web search, after you've actually used the results (or decided they were useless), send structured feedback with `firecrawl search-feedback <id>`. Eligible feedback can refund 1 credit and helps us improve search quality. **Do this once per search**, in the background, after you finish processing the results. Alexandria-only discovery and Find Tools cost 0 credits; do not apply this refund workflow to them. For mixed results, feedback should describe the web results you used.
 
 **Opt out:** if `FIRECRAWL_NO_SEARCH_FEEDBACK=1` (or `FIRECRAWL_DISABLE_SEARCH_FEEDBACK=1`) is set, the CLI silently skips the call and never sends anything. Respect that — do not try to work around it. (Team admins can also disable this server-side; the API will return `feedbackErrorCode: "TEAM_OPTED_OUT"` and the CLI will exit 0 silently.)
 
@@ -62,7 +78,7 @@ Verify the search returned results before reading its `id`. Zero-result searches
 # Send once per search. Rate honestly and replace the placeholder with the
 # rating that matches what actually happened. The two fields shown
 # satisfy the substantive-content rule for every rating.
-if SEARCH_ID=$(jq -er 'select(any(.data[]; length > 0)) | .id' .firecrawl/search-react-hooks.json); then
+if SEARCH_ID=$(jq -er 'select(any(.data | .web, .images, .news, .developer; length > 0)) | .id // empty' .firecrawl/search-react-hooks.json); then
   firecrawl search-feedback "$SEARCH_ID" \
     --rating "<good|partial|bad>" \
     --valuable-sources '[{"url":"https://react.dev/reference/react/hooks","reason":"Most authoritative"}]' \

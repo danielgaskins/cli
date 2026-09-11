@@ -1,7 +1,7 @@
 ---
 name: firecrawl
 description: |
-  Any live-web task via the Firecrawl CLI — including ordinary web research: searching the web, reading or extracting pages, gathering sources, discovering site URLs, bulk extraction, downloading a site, change alerts, or pages needing clicks/login — web only; local files route to firecrawl-parse. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
+  Live web data and Alexandria tools via the Firecrawl CLI: web research, reading or extracting pages, discovering data-provider tools, retrieving provider data, gathering sources, discovering site URLs, bulk extraction, downloading a site, change alerts, or pages needing clicks/login. Local files route to firecrawl-parse. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
@@ -9,7 +9,7 @@ allowed-tools:
 
 # Firecrawl CLI
 
-Search, scrape, and interact with the web. Returns clean markdown optimized for LLM context windows.
+Search, scrape, and interact with the web, or discover and execute Alexandria data tools. Returns page content, tool contracts, or structured provider data.
 
 Run `firecrawl --help` or `firecrawl <command> --help` for full option details. For app integration or outcome workflows (research briefs, SEO audits, etc.), route to the `firecrawl-build` / `firecrawl-workflows` skills — see [When to Load References](#when-to-load-references).
 
@@ -30,19 +30,22 @@ Follow this escalation pattern:
 5. **Monitor** - Need recurring checks or ongoing alerts. Prefer setting a monitor with `--page` plus `--goal` instead of doing repeated one-off scrapes.
 6. **Interact** - Scrape first, then interact with the page (pagination, modals, form submissions, multi-step navigation).
 
-| Need                        | Command               | When                                                            |
-| --------------------------- | --------------------- | --------------------------------------------------------------- |
-| Find pages on a topic       | `search`              | No specific URL yet                                             |
-| Find research papers        | `research`            | Biomedical/clinical/scientific literature — use the paper index |
-| Answer a coding question    | `developer`           | Issues, merged PRs, READMEs, and docs — not a general web page  |
-| Get a page's content        | `scrape`              | Have a URL, page is static or JS-rendered                       |
-| Find URLs within a site     | `map`                 | Need to locate a specific subpage                               |
-| Bulk extract a site section | `crawl`               | Need many pages (e.g., all /docs/)                              |
-| AI-powered data extraction  | `agent`               | Need structured data from complex sites                         |
-| Interact with a page        | `scrape` + `interact` | Content requires clicks, form fills, pagination, or login       |
-| Download a site to files    | `x download`          | Save an entire site as local files                              |
-| Parse a local file          | `parse`               | File on disk (PDF, DOCX, XLSX, etc.) — not a URL                |
-| Watch pages for changes     | `monitor`             | Schedule recurring scrapes/crawls, diff against snapshots       |
+| Need                             | Command                       | When                                                            |
+| -------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| Find pages on a topic            | `search`                      | No specific URL yet                                             |
+| Find data tools by intent        | `search --sources alexandria` | Describe the data needed; returns tool contracts                |
+| Explore tools by URL or provider | `find-tools`                  | Contextual lookup and progressive disclosure                    |
+| Execute a known data tool        | `scrape --exchange`           | Have a provider, capability, and its required inputs            |
+| Find research papers             | `research`                    | Biomedical/clinical/scientific literature — use the paper index |
+| Answer a coding question         | `developer`                   | Issues, merged PRs, READMEs, and docs — not a general web page  |
+| Get a page's content             | `scrape`                      | Have a URL, page is static or JS-rendered                       |
+| Find URLs within a site          | `map`                         | Need to locate a specific subpage                               |
+| Bulk extract a site section      | `crawl`                       | Need many pages (e.g., all /docs/)                              |
+| AI-powered data extraction       | `agent`                       | Need structured data from complex sites                         |
+| Interact with a page             | `scrape` + `interact`         | Content requires clicks, form fills, pagination, or login       |
+| Download a site to files         | `x download`                  | Save an entire site as local files                              |
+| Parse a local file               | `parse`                       | File on disk (PDF, DOCX, XLSX, etc.) — not a URL                |
+| Watch pages for changes          | `monitor`                     | Schedule recurring scrapes/crawls, diff against snapshots       |
 
 For detailed command reference, run `firecrawl <command> --help`.
 
@@ -64,6 +67,7 @@ For detailed command reference, run `firecrawl <command> --help`.
 ## When to Load References
 
 - **Searching the web or finding sources first** -> [firecrawl-search](../firecrawl-search/SKILL.md)
+- **Discovering Alexandria tools, walking providers and capabilities, or executing provider data requests** -> [rules/alexandria.md](rules/alexandria.md). Semantic search and optional domain matches share `data.tools`; Find Tools reveals contracts without executing the selected provider.
 - **Finding research papers (biomedical, clinical, or scientific literature; PubMed, bioRxiv, medRxiv, arXiv)** -> [firecrawl-research-index](../firecrawl-research-index/SKILL.md). Use the paper index instead of scraping PubMed or Google Scholar by hand; `search --categories research` is a website filter, not the paper index.
 - **Answering a library, API, error, or known-bug question from issues, merged PRs, READMEs, or docs** -> [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md)
 - **Scraping a known URL** -> [firecrawl-scrape](../firecrawl-scrape/SKILL.md)
@@ -107,7 +111,7 @@ Single format outputs raw content. Multiple formats (e.g., `--format markdown,li
 
 ## Feedback
 
-After using search results, send `firecrawl search-feedback` (the first feedback per search refunds 1 credit). The full pattern, guard, and rules live in [firecrawl-search](../firecrawl-search/SKILL.md).
+After using web search results, follow the feedback guidance in [firecrawl-search](../firecrawl-search/SKILL.md). Free Alexandria-only discovery and Find Tools do not earn a web-search credit refund.
 
 For non-search endpoint jobs, use `firecrawl feedback <endpoint> <jobId>` to send concise job-level feedback through `/v2/feedback`. Supported endpoints are `search`, `scrape`, `parse`, and `map`.
 

@@ -1,7 +1,7 @@
 ---
 name: firecrawl-scrape
 description: |
-  Extract a URL's content as clean markdown, including JS-rendered pages. Use whenever the user provides a URL and wants its content; prefer over WebFetch.
+  Extract a URL's content as clean markdown, including JS-rendered pages, or execute a known Alexandria data-provider capability. Use when the user supplies a page URL or has selected a provider tool and wants its data.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
@@ -9,7 +9,7 @@ allowed-tools:
 
 # firecrawl scrape
 
-Scrape one or more URLs. Returns clean, LLM-optimized markdown. Multiple URLs are scraped concurrently.
+Scrape one or more URLs, or execute a selected Alexandria capability with `--exchange`. Page scraping returns content; Exchange execution returns structured provider results.
 
 ## Quick start
 
@@ -35,7 +35,13 @@ firecrawl scrape "https://example.com/pricing" --query "What is the enterprise p
 
 Run `firecrawl scrape --help` for the full option list.
 
-**Done when:** you have the scraped content — on stdout, in your `-o` file, or under `.firecrawl/` for multi-URL scrapes — and have inspected it with bounded reads (`head`, `grep`) to answer the request.
+## Alexandria provider execution
+
+Use `firecrawl scrape --exchange <provider>/<capability> --options '<JSON>'` after reading the tool's contract. This is a URL-less request; do not combine it with page URLs or page-scraping options. Inspect each result in `data.exchange`, including per-item errors and `data.creditsCost` for the total charge.
+
+Keep the returned request ID. An identical retry uses `--request-id <same-id>`; a pending or uncertain execution must not be retried under a fresh ID. See the [Alexandria workflow](../firecrawl/rules/alexandria.md) for discovery, required inputs, and a complete example.
+
+**Done when:** you have inspected the page content or provider results with bounded reads and used them to answer the request. Report per-item provider failures instead of treating the outer response as proof of success.
 
 ## Tips
 
