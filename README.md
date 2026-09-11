@@ -467,9 +467,20 @@ Paper ids accept `pmid:`, `pmcid:`, `doi:`, and `arxiv:` forms, plus canonical `
 
 ### `feedback` - Send endpoint job feedback
 
-Send concise feedback for a completed v2 `search`, `scrape`, `parse`, or `map`
-job. For search-result quality, `search-feedback` is still the most guided
-command; `feedback` is the generic endpoint/job surface.
+Send optional evidence through `/v2/feedback`. Keyless `search`, `scrape`, and
+`parse` jobs require `--rating`, `--task`, `--assessment`, and 1-20 observations
+provided through `--observations` or `--observations-file`. Use the returned job
+reference and evidence already available; no user interview or additional
+investigation is required. Run `firecrawl feedback --help` for category fields.
+
+Keyless feedback accepts one new submission per identity, category, and UTC day
+across clients. References expire after 24 hours. Submitting feedback does not
+consume or restore operation allowance. Invitations and references appear in
+metadata or stderr, preserving ordinary stdout.
+
+Authenticated callers retain the existing fields. `search-feedback` remains an
+authenticated Search command and cannot submit feedback for keyless jobs. The
+following example uses the authenticated endpoint feedback contract:
 
 ```bash
 firecrawl feedback scrape 0193f6c5-1234-7890-abcd-1234567890ab \
@@ -489,20 +500,24 @@ endpoint feedback calls silently.
 
 #### Feedback Options
 
-| Option                           | Description                                  |
-| -------------------------------- | -------------------------------------------- |
-| `--rating <rating>`              | Required: `good`, `partial`, or `bad`        |
-| `--issues <codesOrJson>`         | Comma-separated issue codes or JSON array    |
-| `--tags <codesOrJson>`           | Comma-separated tags or JSON array           |
-| `--note <text>`                  | Short human-readable feedback                |
-| `--valuable-sources <json>`      | JSON array of `{url, reason}` entries        |
-| `--missing-content <json>`       | JSON array of `{topic, description}` entries |
-| `--query-suggestions <text>`     | Search/query improvement notes               |
-| `--url <url>`                    | Relevant URL for scrape or parse feedback    |
-| `--page-numbers <numbersOrJson>` | Comma-separated page numbers or JSON array   |
-| `--metadata <json>`              | Small JSON object with extra context         |
-| `--metadata-file <path>`         | Path to small metadata JSON object           |
-| `--silent`                       | Suppress output for background agent calls   |
+| Option                           | Description                                          |
+| -------------------------------- | ---------------------------------------------------- |
+| `--rating <rating>`              | Required: `good`, `partial`, or `bad`                |
+| `--task <text>`                  | Task intent, required for keyless feedback           |
+| `--assessment <text>`            | Assessment, required for keyless feedback            |
+| `--observations <json>`          | JSON array of category-specific keyless observations |
+| `--observations-file <path>`     | File containing the observations JSON array          |
+| `--issues <codesOrJson>`         | Comma-separated issue codes or JSON array            |
+| `--tags <codesOrJson>`           | Comma-separated tags or JSON array                   |
+| `--note <text>`                  | Short human-readable feedback                        |
+| `--valuable-sources <json>`      | JSON array of `{url, reason}` entries                |
+| `--missing-content <json>`       | JSON array of `{topic, description}` entries         |
+| `--query-suggestions <text>`     | Search/query improvement notes                       |
+| `--url <url>`                    | Relevant URL for scrape or parse feedback            |
+| `--page-numbers <numbersOrJson>` | Comma-separated page numbers or JSON array           |
+| `--metadata <json>`              | Small JSON object with extra context                 |
+| `--metadata-file <path>`         | Path to small metadata JSON object                   |
+| `--silent`                       | Suppress output for background agent calls           |
 
 ---
 
