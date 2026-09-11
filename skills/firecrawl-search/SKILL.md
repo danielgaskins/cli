@@ -52,7 +52,7 @@ Use `firecrawl feedback search <jobId>` with `--rating`, `--task`, `--assessment
 
 Task, assessment, and observation detail each require 10-2000 characters. Use only evidence already available. Do not ask the user to complete an interview, investigate further, guess missing content, or diagnose causes merely to submit feedback. An empty result set can support a missing-information observation if the response includes an eligible job reference.
 
-One new submission is accepted per keyless identity, category, and UTC day across API, MCP, and CLI. Job references expire after 24 hours. Feedback does not consume or restore operation allowance. Do not submit after every search or retry a daily-limit rejection in a loop. `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` or `FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK=1` disables this path; respect either flag.
+One new submission is accepted per keyless identity per UTC day across Search, Scrape, Parse, API, MCP, and CLI. Job references expire after 24 hours. Feedback does not consume or restore operation allowance. Do not submit after every search or retry a daily-limit rejection in a loop. `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` or `FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK=1` disables this path; respect either flag.
 
 Run `firecrawl feedback --help` for the full evidence contract. Old instructions using `firecrawl search-feedback` require authentication and do not work for keyless jobs.
 

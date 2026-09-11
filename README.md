@@ -473,10 +473,10 @@ provided through `--observations` or `--observations-file`. Use the returned job
 reference and evidence already available; no user interview or additional
 investigation is required. Run `firecrawl feedback --help` for category fields.
 
-Keyless feedback accepts one new submission per identity, category, and UTC day
-across clients. References expire after 24 hours. Submitting feedback does not
-consume or restore operation allowance. Invitations and references appear in
-metadata or stderr, preserving ordinary stdout.
+Keyless feedback accepts one new submission per identity per UTC day across
+Search, Scrape, Parse, and all clients. References expire after 24 hours.
+Submitting feedback does not consume or restore operation allowance. Invitations
+and references appear in metadata or stderr, preserving ordinary stdout.
 
 Authenticated callers retain the existing fields. `search-feedback` remains an
 authenticated Search command and cannot submit feedback for keyless jobs. The

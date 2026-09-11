@@ -1434,7 +1434,7 @@ function createSearchFeedbackCommand(): Command {
 function createFeedbackCommand(): Command {
   const cmd = new Command('feedback')
     .description(
-      'Send optional evidence about a job. Keyless Search, Scrape, and Parse accept one submission per category per UTC day without consuming operation quota.'
+      'Send optional evidence about a job. Keyless Search, Scrape, and Parse accept one submission per identity per UTC day across all three categories without consuming operation quota.'
     )
     .argument('<endpoint>', 'Endpoint: search | scrape | parse | map')
     .argument('<jobId>', 'The job id returned by the endpoint')
@@ -1505,7 +1505,7 @@ function createFeedbackCommand(): Command {
         'Scrape: kind correct, missing, incorrect, or failure; optional location and already-observed retryOutcome.\n' +
         'Parse: kind correct, text, table, layout, or completeness; optional location.\n' +
         'All observations require detail and basis: output, source_comparison, or expectation. source_comparison also requires comparison: {reference, detail}.\n' +
-        'Use only evidence already available. One accepted submission per keyless identity, category, and UTC day, shared across clients.'
+        'Use only evidence already available. One accepted submission per keyless identity per UTC day, shared across Search, Scrape, Parse, and all clients.'
     )
     .action(async (endpointArg: string, jobId: string, options: any) => {
       let endpoint;
