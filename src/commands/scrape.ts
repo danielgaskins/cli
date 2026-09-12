@@ -165,10 +165,7 @@ export async function executeScrape(
     scrapeParams.redactPII = true;
   }
 
-  if (options.domainTools || options.skills) {
-    if (options.skills) {
-      process.stderr.write('--skills is deprecated; use --domain-tools.\n');
-    }
+  if (options.domainTools) {
     scrapeParams.domainTools = true;
   }
 
@@ -246,7 +243,7 @@ export async function handleScrapeCommand(
   // --domain-tools: print the matched tools alongside the scrape output,
   // unless JSON is forced (JSON output already includes data.tools as-is).
   if (
-    (options.domainTools || options.skills) &&
+    options.domainTools &&
     result.success &&
     result.data?.tools &&
     !options.json &&

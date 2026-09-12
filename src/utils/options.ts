@@ -124,6 +124,5 @@ export function parseScrapeOptions(options: any): ScrapeOptions {
     lockdown: options.lockdown,
     redactPII: options.redactPii ?? options.redactPII,
     domainTools: options.domainTools,
-    skills: options.skills,
   };
 }

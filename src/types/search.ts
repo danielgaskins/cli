@@ -20,8 +20,6 @@ export interface SearchOptions {
   /** Sources to search: web, images, news, exchange (default: web) */
   sources?: SearchSource[];
   domainTools?: boolean;
-  /** @deprecated use domainTools */
-  skills?: boolean;
   /** Categories to filter results: github, research, pdf, developer */
   categories?: SearchCategory[];
   /** Time-based search parameter (e.g., qdr:h, qdr:d, qdr:w, qdr:m, qdr:y) */

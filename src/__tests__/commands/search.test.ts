@@ -126,25 +126,18 @@ describe('executeSearch', () => {
       expect(mockHttpPost).not.toHaveBeenCalled();
     });
 
-    it('warns that --skills is deprecated and still maps to domainTools', async () => {
-      const stderrSpy = vi
-        .spyOn(process.stderr, 'write')
-        .mockImplementation(() => true);
+    it('maps --domain-tools to domainTools', async () => {
       mockHttpPost.mockResolvedValue(mockSearchResponse({ tools: [] }));
 
       await executeSearch({
         query: 'podcast episodes',
         sources: ['alexandria'],
-        skills: true,
+        domainTools: true,
       });
 
-      expect(stderrSpy).toHaveBeenCalledWith(
-        '--skills is deprecated; use --domain-tools.\n'
-      );
       expect(mockHttpPost.mock.calls[0][1]).toMatchObject({
         domainTools: true,
       });
-      stderrSpy.mockRestore();
     });
 
     it('passes data.exchange, id and creditsUsed through untouched', async () => {

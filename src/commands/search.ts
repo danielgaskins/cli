@@ -50,10 +50,7 @@ export async function executeSearch(
         typeof source === 'string' ? { type: source } : source
       );
     }
-    if (options.domainTools || options.skills) {
-      if (options.skills) {
-        process.stderr.write('--skills is deprecated; use --domain-tools.\n');
-      }
+    if (options.domainTools) {
       assertExchangeKeyed(options.apiKey, options.apiUrl);
       searchParams.domainTools = true;
     }

@@ -1,4 +1,4 @@
-import { Option, type Command } from 'commander';
+import type { Command } from 'commander';
 
 export type SearchSourceInput =
   | string
@@ -31,17 +31,10 @@ export function hasAlexandria(sources: SearchSourceInput[] = []): boolean {
   );
 }
 export function addAlexandriaOptions(command: Command): Command {
-  return command
-    .option(
-      '--domain-tools',
-      'Include domain-matched contracts in tools alongside semantic matches'
-    )
-    .addOption(
-      new Option(
-        '--skills',
-        '(deprecated, use --domain-tools) Include domain-matched contracts in tools alongside semantic matches'
-      ).hideHelp()
-    );
+  return command.option(
+    '--domain-tools',
+    'Include domain-matched contracts in tools alongside semantic matches'
+  );
 }
 export function parseSearchSources(
   raw: string | undefined
