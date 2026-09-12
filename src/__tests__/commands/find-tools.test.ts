@@ -10,8 +10,8 @@ describe('Find Tools', () => {
       limit: 2,
     });
     expect(call).toEqual({
-      provider: 'firecrawl-contextual-discovery',
-      capability: 'discovery/context',
+      provider: 'firecrawl',
+      capability: 'find-tools',
       options: {
         providers: ['particle'],
         capabilities: ['podcasts/episodes/search'],

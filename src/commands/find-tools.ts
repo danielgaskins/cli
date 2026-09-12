@@ -2,8 +2,8 @@ import { Command, Option } from 'commander';
 import { handleExchangeRetrieveCommand } from './exchange';
 import type { ExchangeCall } from '../types/exchange';
 
-const provider = 'firecrawl-contextual-discovery';
-const capability = 'discovery/context';
+const provider = 'firecrawl';
+const capability = 'find-tools';
 const selectors = [
   'providers',
   'categories',
