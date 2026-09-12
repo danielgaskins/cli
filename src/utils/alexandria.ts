@@ -57,6 +57,16 @@ export function parseSearchSources(
     throw new Error('--sources must contain source names or a JSON array.');
   return normalizeSources(sources);
 }
+export function formatToolsCompact(tools: Array<Record<string, any>>): string {
+  const lines = tools.map((tool) => {
+    const address = `${tool.provider}/${tool.capability}`;
+    const cost = `${tool.creditsCost} credits`;
+    const matchedBy = (tool.matchedBy ?? []).join(', ');
+    return `${address}  ${cost}  matched by ${matchedBy}`;
+  });
+  lines.push('Full contracts are in the --json output.');
+  return lines.join('\n');
+}
 export function formatTools(tools: Array<Record<string, any>>): string {
   return tools
     .map((tool) =>

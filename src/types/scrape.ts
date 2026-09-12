@@ -76,6 +76,8 @@ export interface ScrapeOptions {
   redactPII?: boolean;
   /** Include domain-matched contracts in tools alongside semantic matches */
   domainTools?: boolean;
+  /** @deprecated use domainTools */
+  skills?: boolean;
 }
 
 export interface ScrapeResult {

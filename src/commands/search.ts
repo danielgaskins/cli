@@ -51,6 +51,9 @@ export async function executeSearch(
       );
     }
     if (options.domainTools || options.skills) {
+      if (options.skills) {
+        process.stderr.write('--skills is deprecated; use --domain-tools.\n');
+      }
       assertExchangeKeyed(options.apiKey, options.apiUrl);
       searchParams.domainTools = true;
     }

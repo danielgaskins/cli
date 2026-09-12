@@ -435,6 +435,12 @@ function createScrapeCommand(): Command {
       '--domain-tools',
       'Include domain-matched tool contracts alongside the scrape result'
     )
+    .addOption(
+      new Option(
+        '--skills',
+        '(deprecated, use --domain-tools) Include domain-matched tool contracts alongside the scrape result'
+      ).hideHelp()
+    )
     .option('--schema <json>', 'JSON schema for structured extraction')
     .option('--schema-file <path>', 'Path to JSON schema file')
     .option('--actions <json>', 'JSON actions array to run during scrape')

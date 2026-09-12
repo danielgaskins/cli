@@ -20,7 +20,7 @@ import { executeMap } from './map';
 import { getStatus } from './status';
 import { buildExchangeCalls, handleExchangeRetrieveCommand } from './exchange';
 import type { ExchangeRetrieveOptions } from '../types/exchange';
-import { formatTools } from '../utils/alexandria';
+import { formatToolsCompact } from '../utils/alexandria';
 import { parseRequiresAction } from '../utils/terms';
 
 /**
@@ -165,7 +165,10 @@ export async function executeScrape(
     scrapeParams.redactPII = true;
   }
 
-  if (options.domainTools) {
+  if (options.domainTools || options.skills) {
+    if (options.skills) {
+      process.stderr.write('--skills is deprecated; use --domain-tools.\n');
+    }
     scrapeParams.domainTools = true;
   }
 
@@ -243,13 +246,13 @@ export async function handleScrapeCommand(
   // --domain-tools: print the matched tools alongside the scrape output,
   // unless JSON is forced (JSON output already includes data.tools as-is).
   if (
-    options.domainTools &&
+    (options.domainTools || options.skills) &&
     result.success &&
     result.data?.tools &&
     !options.json &&
     !options.output
   ) {
-    console.error(formatTools(result.data.tools));
+    console.error(formatToolsCompact(result.data.tools));
     console.error('');
   }
 

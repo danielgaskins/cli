@@ -386,6 +386,29 @@ describe('executeScrape', () => {
       expect(result.data?.tools).toEqual([{ name: 'tool' }]);
     });
 
+    it('warns that --skills is deprecated and still maps to domainTools', async () => {
+      const stderrSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+      const mockResponse = { markdown: '# Test', tools: [{ name: 'tool' }] };
+      mockClient.scrape.mockResolvedValue(mockResponse);
+
+      await executeScrape({
+        url: 'https://example.com',
+        skills: true,
+      });
+
+      expect(stderrSpy).toHaveBeenCalledWith(
+        '--skills is deprecated; use --domain-tools.\n'
+      );
+      expect(mockClient.scrape).toHaveBeenCalledWith('https://example.com', {
+        formats: ['markdown'],
+        integration: 'cli',
+        domainTools: true,
+      });
+      stderrSpy.mockRestore();
+    });
+
     it('should not include location parameter when not provided', async () => {
       const mockResponse = { markdown: '# Test' };
       mockClient.scrape.mockResolvedValue(mockResponse);

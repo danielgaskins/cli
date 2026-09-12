@@ -12,32 +12,81 @@ import type {
 import { getClient } from '../utils/client';
 import { getApiKey, getDashboardUrl } from '../utils/config';
 import { writeOutput } from '../utils/output';
+import { buildFindToolsCall } from './find-tools';
 import {
   assertExchangeKeyed,
   exchangeErrorMessage,
+  executeExchangeRetrieve,
   writeExchangeOutput,
 } from './exchange';
 
-async function fetchProviderTerms(
+async function fetchProviderTermsList(
   options: ExchangeTermsOptions
-): Promise<ExchangeProviderTerms> {
+): Promise<ExchangeProviderTerms[]> {
   assertExchangeKeyed(options.apiKey, options.apiUrl);
   const app = getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
   const response = await (app as any).http.get(
     '/exchange/provider-terms?surface=web'
   );
-  const providers: ExchangeProviderTerms[] = Array.isArray(
-    response?.data?.providers
-  )
+  return Array.isArray(response?.data?.providers)
     ? response.data.providers
     : [];
+}
+
+/**
+ * The provider-terms list only carries providers that are gated (plus
+ * firecrawl and fiscal-ai). A provider absent from it may still exist in the
+ * catalogue with no terms of its own, so fall back to a free Find Tools
+ * lookup before calling it unknown.
+ */
+async function providerExistsInCatalogue(
+  provider: string,
+  options: ExchangeTermsOptions
+): Promise<boolean> {
+  const call = buildFindToolsCall([], {
+    providers: provider,
+    level: 'providers',
+    limit: 1,
+  });
+  const result = await executeExchangeRetrieve({
+    apiKey: options.apiKey,
+    apiUrl: options.apiUrl,
+    calls: [call],
+  });
+  if (!result.success) return false;
+  const item = (result.exchange ?? [])[0] as any;
+  if (!item || item.error) return false;
+  const items = Array.isArray(item.data?.items) ? item.data.items : [];
+  return items.length > 0;
+}
+
+async function resolveProviderTerms(
+  options: ExchangeTermsOptions
+): Promise<ExchangeProviderTerms> {
+  const providers = await fetchProviderTermsList(options);
   const entry = providers.find((p) => p.provider === options.provider);
-  if (!entry) {
-    throw new Error(
-      `Unknown Alexandria provider "${options.provider}". List providers with "firecrawl alexandria discover".`
-    );
+  if (entry) return entry;
+  if (await providerExistsInCatalogue(options.provider, options)) {
+    return { provider: options.provider, terms: null };
   }
-  return entry;
+  throw new Error(
+    `Unknown Alexandria provider "${options.provider}". List providers with "firecrawl alexandria discover".`
+  );
+}
+
+function writeNoTermsOutput(
+  entry: ExchangeProviderTerms,
+  options: ExchangeTermsOptions
+): void {
+  if (options.json || options.pretty) {
+    writeExchangeOutput(
+      { provider: entry.provider, terms: null },
+      `${entry.provider} has no provider terms to accept.\n`,
+      options
+    );
+    return;
+  }
+  process.stderr.write(`${entry.provider} has no provider terms to accept.\n`);
 }
 
 function formatTermsReadable(entry: ExchangeProviderTerms): string {
@@ -64,15 +113,13 @@ export async function handleExchangeTermsCommand(
 ): Promise<void> {
   let entry: ExchangeProviderTerms;
   try {
-    entry = await fetchProviderTerms(options);
+    entry = await resolveProviderTerms(options);
   } catch (error) {
     console.error('Error:', exchangeErrorMessage(error));
     process.exit(1);
   }
   if (!entry.terms) {
-    process.stderr.write(
-      `${entry.provider} has no provider terms to accept.\n`
-    );
+    writeNoTermsOutput(entry, options);
     return;
   }
   writeExchangeOutput(entry, formatTermsReadable(entry), options);
@@ -139,15 +186,13 @@ export async function handleExchangeTermsAcceptCommand(
 
   let entry: ExchangeProviderTerms;
   try {
-    entry = await fetchProviderTerms(options);
+    entry = await resolveProviderTerms(options);
   } catch (error) {
     console.error('Error:', exchangeErrorMessage(error));
     process.exit(1);
   }
   if (!entry.terms) {
-    process.stderr.write(
-      `${entry.provider} has no provider terms to accept.\n`
-    );
+    writeNoTermsOutput(entry, options);
     return;
   }
   const { provider } = entry;

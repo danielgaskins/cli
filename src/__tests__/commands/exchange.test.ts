@@ -786,6 +786,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
 describe('handleExchangeTermsCommand / handleExchangeTermsAcceptCommand', () => {
   let mockHttpGet: ReturnType<typeof vi.fn>;
+  let mockHttpPost: ReturnType<typeof vi.fn>;
   let exitSpy: ReturnType<typeof vi.spyOn>;
   let errorSpy: ReturnType<typeof vi.spyOn>;
   let stderrSpy: ReturnType<typeof vi.spyOn>;
@@ -814,7 +815,10 @@ describe('handleExchangeTermsCommand / handleExchangeTermsAcceptCommand', () => 
     mockHttpGet = vi.fn().mockResolvedValue({
       data: { providers: [{ provider: 'fred', terms: null }, fiscalTerms] },
     });
-    vi.mocked(getClient).mockReturnValue({ http: { get: mockHttpGet } } as any);
+    mockHttpPost = vi.fn();
+    vi.mocked(getClient).mockReturnValue({
+      http: { get: mockHttpGet, post: mockHttpPost },
+    } as any);
     vi.mocked(isKeylessMode).mockReturnValue(false);
     exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code: number) => {
       throw new Error(`exit ${code}`);
@@ -905,5 +909,125 @@ describe('handleExchangeTermsCommand / handleExchangeTermsAcceptCommand', () => 
       )
     );
     expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('falls back to Find Tools for a provider absent from the terms list and reports no terms', async () => {
+    mockHttpPost.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          alexandria: [
+            {
+              provider: 'firecrawl',
+              capability: 'find-tools',
+              creditsCost: 0,
+              data: { items: [{ provider: 'sec' }] },
+            },
+          ],
+          creditsCost: 0,
+        },
+      },
+    });
+
+    await handleExchangeTermsCommand({ provider: 'sec' });
+
+    expect(mockHttpPost).toHaveBeenCalledWith(
+      '/v2/scrape',
+      expect.objectContaining({
+        alexandria: [
+          {
+            provider: 'firecrawl',
+            capability: 'find-tools',
+            options: { providers: ['sec'], level: 'providers', limit: 1 },
+          },
+        ],
+      }),
+      expect.any(Object)
+    );
+    expect(stderrSpy).toHaveBeenCalledWith(
+      'sec has no provider terms to accept.\n'
+    );
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('writes {provider, terms: null} to stdout in --json mode for the Find Tools fallback', async () => {
+    mockHttpPost.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          alexandria: [
+            {
+              provider: 'firecrawl',
+              capability: 'find-tools',
+              creditsCost: 0,
+              data: { items: [{ provider: 'sec' }] },
+            },
+          ],
+          creditsCost: 0,
+        },
+      },
+    });
+
+    await handleExchangeTermsCommand({ provider: 'sec', json: true });
+
+    const written = vi.mocked(writeOutput).mock.calls.at(-1)?.[0] as string;
+    expect(JSON.parse(written)).toEqual({ provider: 'sec', terms: null });
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('refuses cleanly through terms accept when Find Tools finds the provider but no terms exist', async () => {
+    setTTY(true);
+    mockHttpPost.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          alexandria: [
+            {
+              provider: 'firecrawl',
+              capability: 'find-tools',
+              creditsCost: 0,
+              data: { items: [{ provider: 'sec' }] },
+            },
+          ],
+          creditsCost: 0,
+        },
+      },
+    });
+
+    await handleExchangeTermsAcceptCommand({ provider: 'sec' });
+
+    expect(stderrSpy).toHaveBeenCalledWith(
+      'sec has no provider terms to accept.\n'
+    );
+    expect(input).not.toHaveBeenCalled();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('still throws unknown provider when neither the terms list nor Find Tools know it', async () => {
+    mockHttpPost.mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          alexandria: [
+            {
+              provider: 'firecrawl',
+              capability: 'find-tools',
+              creditsCost: 0,
+              data: { items: [] },
+            },
+          ],
+          creditsCost: 0,
+        },
+      },
+    });
+
+    await expect(
+      handleExchangeTermsCommand({ provider: 'nonexistent' })
+    ).rejects.toThrow('exit 1');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error:',
+      expect.stringContaining('Unknown Alexandria provider "nonexistent"')
+    );
   });
 });
