@@ -469,7 +469,7 @@ Paper ids accept `pmid:`, `pmcid:`, `doi:`, and `arxiv:` forms, plus canonical `
 
 Send optional evidence through `/v2/feedback`. Keyless `search`, `scrape`, and
 `parse` jobs require `--rating`, `--task`, `--assessment`, and 1-20 observations
-provided through `--observations` or `--observations-file`. Use the returned job
+provided through `--observations` or `--observations-file`. Keyless Parse also requires `--doc-class born_digital|scanned|mixed|unknown` once per submission. Use the returned job
 reference and evidence already available; no user interview or additional
 investigation is required. Run `firecrawl feedback --help` for category fields.
 
@@ -495,6 +495,14 @@ firecrawl feedback scrape 0193f6c5-1234-7890-abcd-1234567890ab \
 Keep notes and metadata small. Do not send raw scrape or parse outputs as
 feedback.
 
+Search: useful and irrelevant require a one-based position within the delivered group. source is web, images, or news; required for jobs requesting multiple sources, otherwise defaults to web. The position must exist in that requested group. irrelevant requires reason: aggregator_over_official, off_topic, stale, wrong_content_type, snippet_misleading, or blocked_or_paywalled. vertical is required on missing and optional on useful/irrelevant: web_general, social, business, research, developer, news, government, finance, or other. missing may include topic (up to 200 characters) and knownSources (up to 20 HTTP(S) URLs).
+
+Scrape: kind correct, wrong_success, incomplete, or incorrect. wrong_success requires reason: blocked_shell, login_required, paywall, empty, wrong_page, stale, or wrong_locale. incomplete requires reason: partial_content, dynamic_content, pagination, main_content_stripped, or format_lost. incorrect requires reason: wrong, hallucinated, or missing_fields. correct has no reason. Optional location is up to 200 characters. No retryOutcome. Hard-failed Scrape jobs receive no feedback invitation.
+
+Parse: `--doc-class` is required once per submission: born_digital, scanned, mixed, or unknown. Observation kind: correct, text_ocr, table, formula, chart_figure, reading_order, headers_footers, headings_formatting, completeness, images_dropped, or incorrect. text_ocr requires reason: misread_chars, garbled, or missing_text. table requires reason: structure, cells_glued, or digits. completeness requires reason: pages_missing, truncated_at_max_pages, or sections_dropped. incorrect requires reason: wrong, hallucinated, or missing_fields. Other kinds have no reason subtype. Optional page is a one-based positive integer.
+
+Scrape and Parse: format must be a format type the job requested. It is required for output and source_comparison observations when multiple formats were requested; optional for expectation observations and single-format jobs. All observations retain detail and basis; source_comparison requires comparison: {reference, detail}.
+
 Set `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` or `FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK=1` to skip authenticated endpoint feedback calls. These flags do not suppress keyless invitations or submissions. The API controls keyless invitation frequency and eligibility. Submitting feedback remains optional and is never required for continued keyless access.
 
 #### Feedback Options
@@ -503,6 +511,7 @@ Set `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` or `FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK=1
 | -------------------------------- | ---------------------------------------------------- |
 | `--rating <rating>`              | Required: `good`, `partial`, or `bad`                |
 | `--task <text>`                  | Task intent, required for keyless feedback           |
+| `--doc-class <class>`            | Document class, required for keyless Parse           |
 | `--assessment <text>`            | Assessment, required for keyless feedback            |
 | `--observations <json>`          | JSON array of category-specific keyless observations |
 | `--observations-file <path>`     | File containing the observations JSON array          |

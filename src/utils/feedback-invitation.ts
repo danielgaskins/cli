@@ -7,7 +7,7 @@ export function reportFeedbackInvitation(
   }
   if (typeof metadata?.feedback?.message === 'string') {
     process.stderr.write(
-      `${metadata.feedback.message}\nUse: firecrawl feedback ${endpoint} ${metadata.feedback.jobId} --rating <good|partial|bad> --task <task> --assessment <assessment> --observations-file <path>\n`
+      `${metadata.feedback.message}\nUse: firecrawl feedback ${endpoint} ${metadata.feedback.jobId} --rating <good|partial|bad> --task <task> --assessment <assessment> --observations-file <path>${endpoint === 'parse' ? ' --doc-class <born_digital|scanned|mixed|unknown>' : ''}\n`
     );
   }
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   executeEndpointFeedback,
+  parseEndpointFeedbackCliOptions,
   handleEndpointFeedbackCommand,
   parseEndpointFeedbackEndpoint,
   parseFeedbackListArg,
@@ -56,15 +57,18 @@ describe('executeEndpointFeedback', () => {
       });
       const observations = [
         {
-          kind: 'table',
+          kind: 'incorrect',
+          reason: 'missing_fields',
+          format: 'json',
           basis: 'output',
           detail: 'The table contains the expected column headings.',
-          location: 'Page 2',
+          page: 2,
         },
       ];
       const result = await executeEndpointFeedback({
         apiUrl,
         endpoint: 'parse',
+        docClass: 'born_digital',
         jobId: '00000000-0000-4000-8000-000000000001',
         rating: 'good',
         task: 'Read the table headings',
@@ -76,6 +80,7 @@ describe('executeEndpointFeedback', () => {
       expect(init.headers.Authorization).toBeUndefined();
       expect(JSON.parse(init.body)).toMatchObject({
         endpoint: 'parse',
+        docClass: 'born_digital',
         observations,
         origin: 'cli',
         integration: 'cli',
@@ -244,5 +249,25 @@ describe('feedback parsing', () => {
   it('parses positive page numbers', () => {
     expect(parsePageNumbersArg('1, 2, bad, -1, 3')).toEqual([1, 2, 3]);
     expect(parsePageNumbersArg('[4,5]')).toEqual([4, 5]);
+  });
+});
+
+describe('keyless document class option', () => {
+  it.each(['born_digital', 'scanned', 'mixed', 'unknown'] as const)(
+    'preserves %s for submission',
+    (docClass) => {
+      expect(
+        parseEndpointFeedbackCliOptions({ rating: 'partial', docClass })
+          .docClass
+      ).toBe(docClass);
+    }
+  );
+  it('rejects an unsupported class without changing authenticated defaults', () => {
+    expect(() =>
+      parseEndpointFeedbackCliOptions({ rating: 'partial', docClass: 'pdf' })
+    ).toThrow('--doc-class');
+    expect(
+      parseEndpointFeedbackCliOptions({ rating: 'good' }).docClass
+    ).toBeUndefined();
   });
 });

@@ -20,6 +20,9 @@ describe('feedback invitation output', () => {
     expect(stderr.mock.calls.flat().join('')).toContain(
       'firecrawl feedback parse job-1'
     );
+    expect(stderr.mock.calls.flat().join('')).toContain(
+      '--doc-class <born_digital|scanned|mixed|unknown>'
+    );
   });
   it('retains keyless invitations despite authenticated feedback preferences', () => {
     process.env.FIRECRAWL_NO_ENDPOINT_FEEDBACK = 'true';

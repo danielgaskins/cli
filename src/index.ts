@@ -1457,6 +1457,10 @@ function createFeedbackCommand(): Command {
       'Meaningful assessment, required for keyless feedback'
     )
     .option(
+      '--doc-class <class>',
+      'Document class, required once for keyless Parse: born_digital | scanned | mixed | unknown'
+    )
+    .option(
       '--observations <json>',
       'JSON array of category-specific observations with kind, detail, and basis (output, source_comparison, or expectation)'
     )
@@ -1501,10 +1505,10 @@ function createFeedbackCommand(): Command {
     .addHelpText(
       'after',
       '\nKeyless evidence: task, assessment, and each observation detail must contain 10-2000 characters. Submit 1-20 observations.\n' +
-        'Search: kind useful or irrelevant, source web/images/news, and one-based position within that delivered group; or kind missing with topic and optional knownSources URLs.\n' +
-        'Scrape: kind correct, missing, incorrect, or failure; optional location and already-observed retryOutcome.\n' +
-        'Parse: kind correct, text, table, layout, or completeness; optional location.\n' +
-        'All observations require detail and basis: output, source_comparison, or expectation. source_comparison also requires comparison: {reference, detail}.\n' +
+        'Search: useful and irrelevant require a one-based position within the delivered group. source is web, images, or news; required for jobs requesting multiple sources, otherwise defaults to web. The position must exist in that requested group. irrelevant requires reason: aggregator_over_official, off_topic, stale, wrong_content_type, snippet_misleading, or blocked_or_paywalled. vertical is required on missing and optional on useful/irrelevant: web_general, social, business, research, developer, news, government, finance, or other. missing may include topic (up to 200 characters) and knownSources (up to 20 HTTP(S) URLs).\n' +
+        'Scrape: kind correct, wrong_success, incomplete, or incorrect. wrong_success requires reason: blocked_shell, login_required, paywall, empty, wrong_page, stale, or wrong_locale. incomplete requires reason: partial_content, dynamic_content, pagination, main_content_stripped, or format_lost. incorrect requires reason: wrong, hallucinated, or missing_fields. correct has no reason. Optional location is up to 200 characters. No retryOutcome. Hard-failed Scrape jobs receive no feedback invitation.\n' +
+        'Parse: --doc-class is required once per submission: born_digital, scanned, mixed, or unknown. Observation kind: correct, text_ocr, table, formula, chart_figure, reading_order, headers_footers, headings_formatting, completeness, images_dropped, or incorrect. text_ocr requires reason: misread_chars, garbled, or missing_text. table requires reason: structure, cells_glued, or digits. completeness requires reason: pages_missing, truncated_at_max_pages, or sections_dropped. incorrect requires reason: wrong, hallucinated, or missing_fields. Other kinds have no reason subtype. Optional page is a one-based positive integer.\n' +
+        'Scrape and Parse: format must be a format type the job requested. It is required for output and source_comparison observations when multiple formats were requested; optional for expectation observations and single-format jobs. All observations retain detail and basis; source_comparison requires comparison: {reference, detail}.\n' +
         'Use only evidence already available. One accepted submission per keyless identity per UTC day, shared across Search, Scrape, Parse, and all clients.'
     )
     .action(async (endpointArg: string, jobId: string, options: any) => {
@@ -1533,6 +1537,7 @@ function createFeedbackCommand(): Command {
         note: options.note,
         task: options.task,
         assessment: options.assessment,
+        docClass: parsed.docClass,
         observations: parsed.observations,
         valuableSources: parsed.valuableSources,
         missingContent: parsed.missingContent,

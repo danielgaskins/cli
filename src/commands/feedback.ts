@@ -22,6 +22,7 @@ export interface EndpointFeedbackOptions {
   rating: SearchFeedbackRating;
   task?: string;
   assessment?: string;
+  docClass?: 'born_digital' | 'scanned' | 'mixed' | 'unknown';
   observations?: Record<string, unknown>[];
   issues?: string[];
   tags?: string[];
@@ -223,8 +224,17 @@ export function parseEndpointFeedbackCliOptions(options: {
   rating?: string;
   observations?: string;
   observationsFile?: string;
+  docClass?: string;
 }) {
+  if (
+    options.docClass !== undefined &&
+    !['born_digital', 'scanned', 'mixed', 'unknown'].includes(options.docClass)
+  )
+    throw new Error(
+      '--doc-class must be one of: born_digital, scanned, mixed, unknown'
+    );
   return {
+    docClass: options.docClass as EndpointFeedbackOptions['docClass'],
     observations: parseObservations(
       options.observations,
       options.observationsFile
@@ -272,6 +282,7 @@ export async function executeEndpointFeedback(
       ['note', options.note],
       ['task', options.task],
       ['assessment', options.assessment],
+      ['docClass', options.docClass],
       ['observations', options.observations],
       ['valuableSources', options.valuableSources],
       ['missingContent', options.missingContent],
