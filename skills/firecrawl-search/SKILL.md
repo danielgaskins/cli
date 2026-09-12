@@ -42,7 +42,7 @@ firecrawl search "podcast conversations about AI agents" \
 
 Search always needs a non-empty query. `--sources alexandria` searches tools semantically; `--domain-tools` opts into additional contextual matches. Both return contracts in `data.tools`, with `matchedBy` and `matchedUrls` explaining relevance. Omit `--domain-tools` when semantic matches are enough. Discovery does not execute the returned tools.
 
-For a known URL or provider, use `firecrawl find-tools`; catalogue filters belong there. Follow the [Alexandria workflow](../firecrawl/rules/alexandria.md) to read contracts, follow `next`, and execute a selected tool through `scrape --exchange`.
+For a known URL or provider, use `firecrawl find-tools`; catalogue filters belong there. Follow the [Alexandria workflow](../firecrawl/rules/alexandria.md) to read contracts, follow `next`, and execute a selected tool through `scrape --alexandria`.
 
 **Done when:** fresh results have been inspected and used for the request, or no matches have been reported. Apply the feedback guidance below when web results were used; free tool discovery does not require a web-search feedback call.
 

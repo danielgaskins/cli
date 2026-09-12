@@ -35,7 +35,7 @@ Follow this escalation pattern:
 | Find pages on a topic            | `search`                      | No specific URL yet                                             |
 | Find data tools by intent        | `search --sources alexandria` | Describe the data needed; returns tool contracts                |
 | Explore tools by URL or provider | `find-tools`                  | Contextual lookup and progressive disclosure                    |
-| Execute a known data tool        | `scrape --exchange`           | Have a provider, capability, and its required inputs            |
+| Execute a known data tool        | `scrape --alexandria`         | Have a provider, capability, and its required inputs            |
 | Find research papers             | `research`                    | Biomedical/clinical/scientific literature — use the paper index |
 | Answer a coding question         | `developer`                   | Issues, merged PRs, READMEs, and docs — not a general web page  |
 | Get a page's content             | `scrape`                      | Have a URL, page is static or JS-rendered                       |

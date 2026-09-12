@@ -437,13 +437,21 @@ function createScrapeCommand(): Command {
     .option('--actions-file <path>', 'Path to JSON actions file')
     .option('--proxy <proxy>', 'Proxy mode for scraping (e.g., auto, basic)')
     .option(
-      '--exchange <provider/capability>',
-      'Execute an Exchange capability instead of scraping a URL (repeatable, up to 10). Requires an API key on a team with Exchange access.',
+      '--alexandria <provider/capability>',
+      'Execute an Alexandria capability instead of scraping a URL (repeatable, up to 10). Requires an API key on a team with Alexandria access.',
       collectRepeatable
+    )
+    .addOption(
+      new Option(
+        '--exchange <provider/capability>',
+        'Deprecated alias for --alexandria'
+      )
+        .argParser(collectRepeatable)
+        .hideHelp()
     )
     .option(
       '--options <json>',
-      'JSON options for the --exchange capability at the same position (repeatable)',
+      'JSON options for the --alexandria capability at the same position (repeatable)',
       collectRepeatable
     )
     .option(
@@ -470,16 +478,20 @@ function createScrapeCommand(): Command {
       // Remove duplicates
       urls = [...new Set(urls)];
 
-      // Exchange execution is url-less; the API rejects url + exchange together.
-      if (options.exchange && options.exchange.length > 0) {
+      // Alexandria execution is url-less; the API rejects url + alexandria together.
+      const alexandriaAddresses = [
+        ...(options.alexandria ?? []),
+        ...(options.exchange ?? []),
+      ];
+      if (alexandriaAddresses.length > 0) {
         if (urls.length > 0) {
           console.error(
-            'Error: --exchange cannot be combined with a URL. Scrape a URL or execute Exchange capabilities, not both.'
+            'Error: --alexandria cannot be combined with a URL. Scrape a URL or execute Alexandria capabilities, not both.'
           );
           process.exit(1);
         }
         await handleScrapeExchangeCommand(
-          options.exchange,
+          alexandriaAddresses,
           options.options ?? [],
           {
             apiKey: options.apiKey,

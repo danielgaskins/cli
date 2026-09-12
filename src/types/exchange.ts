@@ -3,7 +3,7 @@
  *
  * Mirrors the frozen Firecrawl Exchange interface: discovery goes through
  * GET /exchange/discover and execution goes through POST /v2/scrape with an
- * `exchange` array (url-less scrape).
+ * `alexandria` array (url-less scrape).
  */
 
 /** One capability to execute: `provider/capability` plus its options. */
@@ -77,7 +77,7 @@ export interface ExchangeScrapeResponse {
   success: boolean;
   scrape_id?: string;
   data?: {
-    exchange: ExchangeScrapeResult[];
+    alexandria: ExchangeScrapeResult[];
     creditsCost: number;
   };
   error?: string;

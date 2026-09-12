@@ -9,7 +9,7 @@ allowed-tools:
 
 # firecrawl scrape
 
-Scrape one or more URLs, or execute a selected Alexandria capability with `--exchange`. Page scraping returns content; Exchange execution returns structured provider results.
+Scrape one or more URLs, or execute a selected Alexandria capability with `--alexandria`. Page scraping returns content; Alexandria execution returns structured provider results.
 
 ## Quick start
 
@@ -37,7 +37,7 @@ Run `firecrawl scrape --help` for the full option list.
 
 ## Alexandria provider execution
 
-Use `firecrawl scrape --exchange <provider>/<capability> --options '<JSON>'` after reading the tool's contract. This is a URL-less request; do not combine it with page URLs or page-scraping options. Inspect each result in `data.exchange`, including per-item errors and `data.creditsCost` for the total charge.
+Use `firecrawl scrape --alexandria <provider>/<capability> --options '<JSON>'` after reading the tool's contract. This is a URL-less request; do not combine it with page URLs or page-scraping options. Inspect each result in `data.alexandria`, including per-item errors and `data.creditsCost` for the total charge.
 
 Keep the returned request ID. An identical retry uses `--request-id <same-id>`; a pending or uncertain execution must not be retried under a fresh ID. See the [Alexandria workflow](../firecrawl/rules/alexandria.md) for discovery, required inputs, and a complete example.
 

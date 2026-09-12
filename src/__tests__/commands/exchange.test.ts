@@ -287,7 +287,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
       data: {
         success: true,
         scrape_id: 'scrape-1',
-        data: { exchange: [successItem, failedItem], creditsCost: 1 },
+        data: { alexandria: [successItem, failedItem], creditsCost: 1 },
       },
     });
 
@@ -307,7 +307,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     expect(mockHttpPost).toHaveBeenCalledWith(
       '/v2/scrape',
       {
-        exchange: [
+        alexandria: [
           {
             provider: 'fred',
             capability: 'series/observations',
@@ -334,7 +334,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     mockHttpPost
       .mockRejectedValueOnce(new Error('Connection reset'))
       .mockResolvedValueOnce({
-        data: { success: true, data: { exchange: [] } },
+        data: { success: true, data: { alexandria: [] } },
       });
     const first = await executeExchangeRetrieve({ calls });
     expect(first.success).toBe(false);
@@ -354,7 +354,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
       data: {
         success: true,
         scrape_id: 'scrape-2',
-        data: { exchange: [successItem], creditsCost: 1 },
+        data: { alexandria: [successItem], creditsCost: 1 },
       },
     });
 
@@ -365,7 +365,7 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     expect(mockHttpPost).toHaveBeenCalledWith(
       '/v2/scrape',
       {
-        exchange: [{ provider: 'fred', capability: 'series/observations' }],
+        alexandria: [{ provider: 'fred', capability: 'series/observations' }],
         integration: 'cli',
       },
       { headers: { 'x-request-id': expect.any(String) } }
@@ -569,7 +569,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
       data: {
         success: true,
         scrape_id: 'scrape-1',
-        data: { exchange: [successItem, failedItem], creditsCost: 1 },
+        data: { alexandria: [successItem, failedItem], creditsCost: 1 },
       },
     });
 
@@ -598,7 +598,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
       data: {
         success: true,
         scrape_id: 'scrape-1',
-        data: { exchange: [successItem], creditsCost: 1 },
+        data: { alexandria: [successItem], creditsCost: 1 },
       },
     });
 
@@ -611,7 +611,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
       success: true,
       requestId: expect.any(String),
       scrape_id: 'scrape-1',
-      data: { exchange: [successItem], creditsCost: 1 },
+      data: { alexandria: [successItem], creditsCost: 1 },
     });
   });
 
@@ -620,7 +620,7 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
       data: {
         success: true,
         scrape_id: 'scrape-3',
-        data: { exchange: [failedItem], creditsCost: 0 },
+        data: { alexandria: [failedItem], creditsCost: 0 },
       },
     });
 

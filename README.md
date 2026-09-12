@@ -215,31 +215,31 @@ firecrawl scrape https://firecrawl.dev https://firecrawl.dev/blog https://docs.f
 
 #### Scrape Options
 
-| Option                     | Description                                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-f, --format <formats>`   | Output format(s), comma-separated                                                                                                           |
-| `-H, --html`               | Shortcut for `--format html`                                                                                                                |
-| `-S, --summary`            | Shortcut for `--format summary`                                                                                                             |
-| `--only-main-content`      | Extract only main content (removes navs, footers, etc.)                                                                                     |
-| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)                                                                                         |
-| `--screenshot`             | Take a screenshot                                                                                                                           |
-| `--full-page-screenshot`   | Take a full page screenshot                                                                                                                 |
-| `--include-tags <tags>`    | Only include specific HTML tags                                                                                                             |
-| `--exclude-tags <tags>`    | Exclude specific HTML tags                                                                                                                  |
-| `--max-age <milliseconds>` | Maximum age of cached content in milliseconds                                                                                               |
-| `--lockdown`               | Enable lockdown mode for the scrape                                                                                                         |
-| `--redact-pii`             | Redact personally identifiable information from output                                                                                      |
-| `--schema <json>`          | JSON schema for structured extraction                                                                                                       |
-| `--schema-file <path>`     | Path to JSON schema file for structured extraction                                                                                          |
-| `--actions <json>`         | JSON actions array to run during scrape                                                                                                     |
-| `--actions-file <path>`    | Path to JSON actions file                                                                                                                   |
-| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)                                                                                      |
-| `--exchange <address>`     | Execute an Exchange capability (`provider/capability`) instead of a URL; repeatable, up to 10. See [`exchange`](#exchange---data-providers) |
-| `--options <json>`         | JSON options for the `--exchange` address at the same position (repeatable)                                                                 |
-| `-o, --output <path>`      | Save output to file                                                                                                                         |
-| `--json`                   | Output as JSON format                                                                                                                       |
-| `--pretty`                 | Pretty print JSON output                                                                                                                    |
-| `--timing`                 | Show request timing info                                                                                                                    |
+| Option                     | Description                                                                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-f, --format <formats>`   | Output format(s), comma-separated                                                                                                                                                  |
+| `-H, --html`               | Shortcut for `--format html`                                                                                                                                                       |
+| `-S, --summary`            | Shortcut for `--format summary`                                                                                                                                                    |
+| `--only-main-content`      | Extract only main content (removes navs, footers, etc.)                                                                                                                            |
+| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)                                                                                                                                |
+| `--screenshot`             | Take a screenshot                                                                                                                                                                  |
+| `--full-page-screenshot`   | Take a full page screenshot                                                                                                                                                        |
+| `--include-tags <tags>`    | Only include specific HTML tags                                                                                                                                                    |
+| `--exclude-tags <tags>`    | Exclude specific HTML tags                                                                                                                                                         |
+| `--max-age <milliseconds>` | Maximum age of cached content in milliseconds                                                                                                                                      |
+| `--lockdown`               | Enable lockdown mode for the scrape                                                                                                                                                |
+| `--redact-pii`             | Redact personally identifiable information from output                                                                                                                             |
+| `--schema <json>`          | JSON schema for structured extraction                                                                                                                                              |
+| `--schema-file <path>`     | Path to JSON schema file for structured extraction                                                                                                                                 |
+| `--actions <json>`         | JSON actions array to run during scrape                                                                                                                                            |
+| `--actions-file <path>`    | Path to JSON actions file                                                                                                                                                          |
+| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)                                                                                                                             |
+| `--alexandria <address>`   | Execute an Alexandria capability (`provider/capability`) instead of a URL; repeatable, up to 10. See [`exchange`](#exchange---data-providers) (`--exchange` is a deprecated alias) |
+| `--options <json>`         | JSON options for the `--alexandria` address at the same position (repeatable)                                                                                                      |
+| `-o, --output <path>`      | Save output to file                                                                                                                                                                |
+| `--json`                   | Output as JSON format                                                                                                                                                              |
+| `--pretty`                 | Pretty print JSON output                                                                                                                                                           |
+| `--timing`                 | Show request timing info                                                                                                                                                           |
 
 #### Available Formats
 
@@ -451,15 +451,15 @@ firecrawl exchange retrieve fred/series/observations fred/series/search \
   --options '{"series_id":"CPIAUCSL"}' --options '{"q":"inflation"}' --json
 
 # Same execution through scrape (url-less)
-firecrawl scrape --exchange fred/series/observations --options '{"series_id":"CPIAUCSL"}'
+firecrawl scrape --alexandria fred/series/observations --options '{"series_id":"CPIAUCSL"}'
 
 # Find capabilities beside web results
 firecrawl search "nvidia balance sheet" --sources web,alexandria --json
 ```
 
-`retrieve` posts to `/v2/scrape` with an `exchange` array and prints each
+`retrieve` posts to `/v2/scrape` with an `alexandria` array and prints each
 item with its `creditsCost` (`--json` mirrors the API envelope:
-`{ success, scrape_id, requestId, data: { exchange: [...], creditsCost } }`). A provider
+`{ success, scrape_id, requestId, data: { alexandria: [...], creditsCost } }`). A provider
 error inside the batch is reported per item and does not fail the request; the
 exit code is 1 only when every item failed, when the request itself was
 rejected (403 team not enabled, 402 insufficient credits, 409 duplicate

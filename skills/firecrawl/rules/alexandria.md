@@ -28,10 +28,10 @@ firecrawl find-tools --providers particle \
   -o .firecrawl/episode-contract.json
 ```
 
-Find Tools returns its catalogue page inside `data.exchange[0].data`:
+Find Tools returns its catalogue page inside `data.alexandria[0].data`:
 
 ```bash
-jq '.data.exchange[0].data | {level, items, next}' .firecrawl/find-tools.json
+jq '.data.alexandria[0].data | {level, items, next}' .firecrawl/find-tools.json
 ```
 
 Follow the selected item's `next` to reveal more detail. Follow the catalogue page's top-level `next` for another page. Pass the complete returned request unchanged:
@@ -48,11 +48,11 @@ firecrawl find-tools --request '<next request JSON>' --json \
 Use the inputs from the current contract. For Particle episode search, `keyword_search` supplies the exact words to find:
 
 ```bash
-firecrawl scrape --exchange particle/podcasts/episodes/search \
+firecrawl scrape --alexandria particle/podcasts/episodes/search \
   --options '{"keyword_search":"AI agents","limit":2}' \
   --json -o .firecrawl/episodes.json
 ```
 
-Inspect `data.exchange` for provider results and per-item errors; an overall successful response can contain a failed item. `data.creditsCost` is the total charge. Tool discovery and Find Tools are free. Web search retains its own cost, and executing a selected provider uses its published price, including per-record pricing where specified. Browsing a contract does not accept provider terms or execute the provider.
+Inspect `data.alexandria` for provider results and per-item errors; an overall successful response can contain a failed item. `data.creditsCost` is the total charge. Tool discovery and Find Tools are free. Web search retains its own cost, and executing a selected provider uses its published price, including per-record pricing where specified. Browsing a contract does not accept provider terms or execute the provider.
 
 The CLI generates a request ID and prints it on stderr, including on failure; successful JSON output also includes `requestId`. Retry an identical payload with `--request-id <same-id>`. If execution is pending or uncertain, report that state rather than creating a new ID to trigger another execution. Credit and provider-terms rejections must be resolved before execution can proceed.

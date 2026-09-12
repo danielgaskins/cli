@@ -543,13 +543,13 @@ describe('handleScrapeExchangeCommand', () => {
     vi.clearAllMocks();
   });
 
-  it('delegates --exchange to the url-less /v2/scrape executor', async () => {
+  it('delegates --alexandria to the url-less /v2/scrape executor', async () => {
     mockHttpPost.mockResolvedValue({
       data: {
         success: true,
         scrape_id: 'scrape-9',
         data: {
-          exchange: [
+          alexandria: [
             {
               provider: 'fred',
               capability: 'series/observations',
@@ -580,7 +580,7 @@ describe('handleScrapeExchangeCommand', () => {
     expect(mockHttpPost).toHaveBeenCalledWith(
       '/v2/scrape',
       {
-        exchange: [
+        alexandria: [
           {
             provider: 'fred',
             capability: 'series/observations',
@@ -597,7 +597,7 @@ describe('handleScrapeExchangeCommand', () => {
       scrape_id: 'scrape-9',
       requestId: 'scrape-retry',
       data: {
-        exchange: [
+        alexandria: [
           {
             provider: 'fred',
             capability: 'series/observations',

@@ -241,7 +241,7 @@ export async function executeExchangeRetrieve(
     }
 
     const body: Record<string, unknown> = {
-      exchange: options.calls,
+      alexandria: options.calls,
       integration: 'cli',
     };
     if (options.timeout !== undefined) {
@@ -262,7 +262,7 @@ export async function executeExchangeRetrieve(
       success: true,
       scrapeId: envelope.scrape_id,
       requestId,
-      exchange: envelope.data?.exchange ?? [],
+      exchange: envelope.data?.alexandria ?? [],
       creditsCost: envelope.data?.creditsCost,
     };
   } catch (error) {
@@ -610,7 +610,7 @@ export async function handleExchangeRetrieveCommand(
     success: true,
     requestId: result.requestId,
     data: {
-      exchange: result.exchange ?? [],
+      alexandria: result.exchange ?? [],
       creditsCost: result.creditsCost,
     },
   };
