@@ -21,6 +21,7 @@ import { getStatus } from './status';
 import { buildExchangeCalls, handleExchangeRetrieveCommand } from './exchange';
 import type { ExchangeRetrieveOptions } from '../types/exchange';
 import { formatTools } from '../utils/alexandria';
+import { parseRequiresAction } from '../utils/terms';
 
 /**
  * `firecrawl scrape --exchange provider/capability --options '<json>'`:
@@ -216,10 +217,18 @@ export async function executeScrape(
     const requestEndTime = Date.now();
     outputTiming(options, requestStartTime, requestEndTime, error);
 
-    return {
+    const failure: ScrapeResult = {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+    const code = (error as any)?.code;
+    if (typeof code === 'string') {
+      failure.code = code;
+      failure.requiresAction = parseRequiresAction(
+        (error as any)?.details?.requiresAction
+      );
+    }
+    return failure;
   }
 }
 

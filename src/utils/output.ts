@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { ScrapeResult, ScrapeFormat } from '../types/scrape';
+import { formatTermsRequired } from './terms';
 
 /**
  * Determine if output should be JSON based on flag or file extension
@@ -178,8 +179,21 @@ export function handleScrapeOutput(
   json: boolean = false
 ): void {
   if (!result.success) {
-    // Always use stderr for errors to allow piping
-    console.error('Error:', result.error);
+    if (result.code && shouldOutputJson(outputPath, json)) {
+      const envelope = {
+        success: false,
+        code: result.code,
+        error: result.error,
+        requiresAction: result.requiresAction,
+      };
+      writeOutput(
+        pretty ? JSON.stringify(envelope, null, 2) : JSON.stringify(envelope)
+      );
+    } else if (result.requiresAction) {
+      process.stderr.write(formatTermsRequired(result.requiresAction));
+    } else {
+      console.error('Error:', result.error);
+    }
     process.exit(1);
   }
 

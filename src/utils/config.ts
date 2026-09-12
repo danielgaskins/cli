@@ -73,6 +73,17 @@ export function getApiKey(providedKey?: string): string | undefined {
 }
 
 const DEFAULT_API_URL = 'https://api.firecrawl.dev';
+const DEFAULT_DASHBOARD_URL = 'https://www.firecrawl.dev';
+
+/**
+ * Dashboard base URL: FIRECRAWL_DASHBOARD_URL overrides the cloud default.
+ */
+export function getDashboardUrl(): string {
+  return (process.env.FIRECRAWL_DASHBOARD_URL || DEFAULT_DASHBOARD_URL).replace(
+    /\/$/,
+    ''
+  );
+}
 
 /**
  * Check if using a custom (non-cloud) API URL

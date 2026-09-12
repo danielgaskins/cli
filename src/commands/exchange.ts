@@ -12,6 +12,7 @@ import type {
   ExchangeCall,
   ExchangeDiscoverOptions,
   ExchangeDiscoverResult,
+  ExchangeRequiresAction,
   ExchangeRetrieveOptions,
   ExchangeRetrieveResult,
   ExchangeScrapeFailure,
@@ -20,6 +21,11 @@ import type {
 } from '../types/exchange';
 import { getClient, isKeylessMode } from '../utils/client';
 import { writeOutput } from '../utils/output';
+import {
+  TERMS_REQUIRED_CODE,
+  formatTermsRequired,
+  parseRequiresAction,
+} from '../utils/terms';
 import { randomUUID } from 'node:crypto';
 
 export const EXCHANGE_KEY_REQUIRED =
@@ -141,10 +147,13 @@ export function buildDiscoverPath(options: ExchangeDiscoverOptions): string {
  * returns from `{ success: false, error, code, chargeId? }` bodies:
  * `duplicate_request` (409), `request_in_flight` (409),
  * `request_unresolved` (503), `unknown_provider` (404),
- * `insufficient_credits` (402), `billing_unavailable` (503).
+ * `insufficient_credits` (402), `billing_unavailable` (503),
+ * `THIRD_PARTY_DATA_TERMS_REQUIRED` (403).
  */
 function exchangeErrorHint(code?: string): string | undefined {
   switch (code) {
+    case TERMS_REQUIRED_CODE:
+      return 'An organization admin must accept the provider terms in the dashboard or with "firecrawl alexandria terms accept <provider>", then rerun.';
     case 'request_in_flight':
       return 'Retry with the same --request-id once the in-flight request finishes.';
     case 'request_unresolved':
@@ -156,15 +165,18 @@ function exchangeErrorHint(code?: string): string | undefined {
   }
 }
 
-/**
- * Pull `{error, code, chargeId}` off an axios error's response body, when
- * present.
- */
-function exchangeErrorDetails(error: unknown): {
+interface ExchangeErrorDetails {
   message?: string;
   code?: string;
   chargeId?: string;
-} {
+  requiresAction?: ExchangeRequiresAction;
+}
+
+/**
+ * Pull `{error, code, chargeId, requiresAction}` off an axios error's response
+ * body, when present.
+ */
+function exchangeErrorDetails(error: unknown): ExchangeErrorDetails {
   const response = (error as any)?.response;
   const body = response?.data;
   if (body && typeof body === 'object') {
@@ -172,9 +184,27 @@ function exchangeErrorDetails(error: unknown): {
       message: typeof body.error === 'string' ? body.error : undefined,
       code: typeof body.code === 'string' ? body.code : undefined,
       chargeId: typeof body.chargeId === 'string' ? body.chargeId : undefined,
+      requiresAction: parseRequiresAction(body.requiresAction),
     };
   }
   return {};
+}
+
+/**
+ * One line for a request-level failure: the API message, its code, the
+ * chargeId when a charge was created, and the per-code hint.
+ */
+export function formatExchangeFailure(failure: {
+  error?: string;
+  code?: string;
+  chargeId?: string;
+}): string {
+  const message = failure.error ?? 'Unknown error occurred';
+  const parts = [failure.code ? `${message} (${failure.code})` : message];
+  if (failure.chargeId) parts.push(`chargeId: ${failure.chargeId}`);
+  const hint = exchangeErrorHint(failure.code);
+  if (hint) parts.push(hint);
+  return parts.join(' — ');
 }
 
 /**
@@ -185,11 +215,7 @@ function exchangeErrorDetails(error: unknown): {
 export function exchangeErrorMessage(error: unknown): string {
   const { message, code, chargeId } = exchangeErrorDetails(error);
   if (message) {
-    const parts = [code ? `${message} (${code})` : message];
-    if (chargeId) parts.push(`chargeId: ${chargeId}`);
-    const hint = exchangeErrorHint(code);
-    if (hint) parts.push(hint);
-    return parts.join(' — ');
+    return formatExchangeFailure({ error: message, code, chargeId });
   }
   const response = (error as any)?.response;
   if (typeof response?.status === 'number') {
@@ -266,13 +292,15 @@ export async function executeExchangeRetrieve(
       creditsCost: envelope.data?.creditsCost,
     };
   } catch (error) {
-    const { code, chargeId } = exchangeErrorDetails(error);
+    const { message, code, chargeId, requiresAction } =
+      exchangeErrorDetails(error);
     return {
       success: false,
       requestId,
-      error: exchangeErrorMessage(error),
+      error: message ?? exchangeErrorMessage(error),
       code,
       chargeId,
+      requiresAction,
     };
   }
 }
@@ -546,20 +574,48 @@ function formatDiscoverReadable(data: Record<string, unknown>): string {
   return JSON.stringify(data, null, 2);
 }
 
-function writeExchangeOutput(
+function stringifyJson(payload: unknown, pretty?: boolean): string {
+  return pretty ? JSON.stringify(payload, null, 2) : JSON.stringify(payload);
+}
+
+export function writeExchangeOutput(
   jsonPayload: unknown,
   readable: string,
   options: { output?: string; json?: boolean; pretty?: boolean }
 ): void {
-  let content: string;
-  if (options.json || options.pretty) {
-    content = options.pretty
-      ? JSON.stringify(jsonPayload, null, 2)
-      : JSON.stringify(jsonPayload);
-  } else {
-    content = readable;
-  }
+  const content =
+    options.json || options.pretty
+      ? stringifyJson(jsonPayload, options.pretty)
+      : readable;
   writeOutput(content, options.output, !!options.output);
+}
+
+/**
+ * Request-level failure: `--json` gets a `{success:false, ...}` envelope on
+ * stdout; human mode gets the terms block or a one-line error on stderr.
+ */
+function reportExchangeFailure(
+  result: ExchangeRetrieveResult,
+  options: { json?: boolean; pretty?: boolean }
+): void {
+  if (options.json || options.pretty) {
+    writeOutput(
+      stringifyJson(
+        {
+          success: false,
+          requestId: result.requestId,
+          code: result.code,
+          error: result.error,
+          requiresAction: result.requiresAction,
+        },
+        options.pretty
+      )
+    );
+  } else if (result.requiresAction) {
+    process.stderr.write(formatTermsRequired(result.requiresAction));
+  } else {
+    console.error('Error:', formatExchangeFailure(result));
+  }
 }
 
 /**
@@ -594,7 +650,7 @@ export async function handleExchangeRetrieveCommand(
     process.stderr.write(`Request ID: ${result.requestId}\n`);
 
   if (!result.success) {
-    console.error('Error:', result.error);
+    reportExchangeFailure(result, options);
     if (result.requestId)
       process.stderr.write(
         `If retrying the identical payload, reuse --request-id ${result.requestId}. Do not replace the ID for pending or uncertain execution.\n`

@@ -14,12 +14,18 @@ import {
   handleExchangeRetrieveCommand,
   parseExchangeAddress,
 } from '../../commands/exchange';
+import {
+  handleExchangeTermsAcceptCommand,
+  handleExchangeTermsCommand,
+} from '../../commands/terms';
 import { getClient, isKeylessMode } from '../../utils/client';
 import { initializeConfig } from '../../utils/config';
 import { writeOutput } from '../../utils/output';
 import { setupTest, teardownTest } from '../utils/mock-client';
+import { input } from '@inquirer/prompts';
 
 vi.mock('../../utils/output', () => ({ writeOutput: vi.fn() }));
+vi.mock('@inquirer/prompts', () => ({ input: vi.fn() }));
 
 vi.mock('../../utils/client', async () => {
   const actual = await vi.importActual('../../utils/client');
@@ -52,6 +58,35 @@ const failedItem = {
     code: 'credential_missing',
     message: 'FRED credential is not configured.',
     status: 503,
+  },
+};
+
+const termsRequiredBody = {
+  success: false,
+  code: 'THIRD_PARTY_DATA_TERMS_REQUIRED',
+  error:
+    "An organization admin must accept the benzinga provider's terms (version 2026-09-12-placeholder) before this request can run. Accept them at https://www.firecrawl.dev/app/alexandria/benzinga",
+  requiresAction: {
+    type: 'accept_terms',
+    terms: 'benzinga',
+    version: '2026-09-12-placeholder',
+    url: 'https://www.firecrawl.dev/app/alexandria/benzinga',
+  },
+};
+
+const fiscalTerms = {
+  provider: 'fiscal-ai',
+  name: 'Fiscal.ai',
+  website: 'fiscal.ai',
+  required: true,
+  terms: {
+    key: 'fiscal-ai',
+    version: '2026-09-12-placeholder',
+    effective: '2026-09-12',
+    publisher: 'Fiscal.ai',
+    body: ['Hello world.'],
+    document: '---\npublisher: Fiscal.ai\n---\n\nHello world.\n',
+    digest: 'sha256:abc',
   },
 };
 
@@ -391,6 +426,38 @@ describe('executeExchangeDiscover / executeExchangeRetrieve', () => {
     });
   });
 
+  it('carries requiresAction through a 403 terms failure', async () => {
+    mockHttpPost.mockRejectedValue(axiosError(403, termsRequiredBody));
+
+    const result = await executeExchangeRetrieve({
+      calls: [{ provider: 'benzinga', capability: 'news' }],
+    });
+
+    expect(result).toEqual({
+      success: false,
+      requestId: expect.any(String),
+      error: termsRequiredBody.error,
+      code: 'THIRD_PARTY_DATA_TERMS_REQUIRED',
+      requiresAction: termsRequiredBody.requiresAction,
+    });
+  });
+
+  it('drops a malformed requiresAction but keeps the code', async () => {
+    mockHttpPost.mockRejectedValue(
+      axiosError(403, {
+        ...termsRequiredBody,
+        requiresAction: { type: 'accept_terms', terms: 'benzinga' },
+      })
+    );
+
+    const result = await executeExchangeRetrieve({
+      calls: [{ provider: 'benzinga', capability: 'news' }],
+    });
+
+    expect(result.code).toBe('THIRD_PARTY_DATA_TERMS_REQUIRED');
+    expect(result.requiresAction).toBeUndefined();
+  });
+
   it('refuses retrieve in keyless mode without calling the API', async () => {
     vi.mocked(isKeylessMode).mockReturnValue(true);
 
@@ -664,5 +731,179 @@ describe('handleExchangeDiscoverCommand / handleExchangeRetrieveCommand', () => 
 
     expect(errorSpy).toHaveBeenCalledWith('Error:', EXCHANGE_KEY_REQUIRED);
     expect(mockHttpPost).not.toHaveBeenCalled();
+  });
+
+  it('prints the terms block on stderr for a 403 terms failure', async () => {
+    mockHttpPost.mockRejectedValue(axiosError(403, termsRequiredBody));
+
+    await expect(
+      handleExchangeRetrieveCommand({
+        calls: [{ provider: 'benzinga', capability: 'news' }],
+      })
+    ).rejects.toThrow('exit 1');
+
+    const stderr = stderrSpy.mock.calls
+      .map((call: unknown[]) => call[0])
+      .join('');
+    expect(stderr).toMatch(/^Request ID: /);
+    expect(stderr).toContain('Alexandria provider terms required');
+    expect(stderr).toContain('Provider:   benzinga');
+    expect(stderr).toContain('Version:    2026-09-12-placeholder');
+    expect(stderr).toContain(
+      'Accept at:  https://www.firecrawl.dev/app/alexandria/benzinga'
+    );
+    expect(stderr).toContain('firecrawl alexandria terms accept benzinga');
+    expect(stderr).toContain('No credits were charged.');
+    expect(stderr).toContain('reuse --request-id');
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(writeOutput).not.toHaveBeenCalled();
+  });
+
+  it('writes a failure envelope to stdout with --json', async () => {
+    mockHttpPost.mockRejectedValue(axiosError(403, termsRequiredBody));
+
+    await expect(
+      handleExchangeRetrieveCommand({
+        calls: [{ provider: 'benzinga', capability: 'news' }],
+        requestId: 'req-1',
+        json: true,
+      })
+    ).rejects.toThrow('exit 1');
+
+    expect(vi.mocked(writeOutput).mock.calls.at(-1)).toEqual([
+      expect.any(String),
+    ]);
+    expect(JSON.parse(writtenOutput())).toEqual({
+      success: false,
+      requestId: 'req-1',
+      code: 'THIRD_PARTY_DATA_TERMS_REQUIRED',
+      error: termsRequiredBody.error,
+      requiresAction: termsRequiredBody.requiresAction,
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('handleExchangeTermsCommand / handleExchangeTermsAcceptCommand', () => {
+  let mockHttpGet: ReturnType<typeof vi.fn>;
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let stderrSpy: ReturnType<typeof vi.spyOn>;
+  const tty = {
+    stdin: process.stdin.isTTY,
+    stdout: process.stdout.isTTY,
+  };
+
+  const setTTY = (value: boolean) => {
+    Object.defineProperty(process.stdin, 'isTTY', {
+      value,
+      configurable: true,
+    });
+    Object.defineProperty(process.stdout, 'isTTY', {
+      value,
+      configurable: true,
+    });
+  };
+
+  beforeEach(() => {
+    setupTest();
+    initializeConfig({
+      apiKey: 'test-api-key',
+      apiUrl: 'https://api.firecrawl.dev',
+    });
+    mockHttpGet = vi.fn().mockResolvedValue({
+      data: { providers: [{ provider: 'fred', terms: null }, fiscalTerms] },
+    });
+    vi.mocked(getClient).mockReturnValue({ http: { get: mockHttpGet } } as any);
+    vi.mocked(isKeylessMode).mockReturnValue(false);
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code: number) => {
+      throw new Error(`exit ${code}`);
+    }) as never);
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    stderrSpy = vi
+      .spyOn(process.stderr, 'write')
+      .mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    setTTY(tty.stdin as boolean);
+    Object.defineProperty(process.stdout, 'isTTY', {
+      value: tty.stdout,
+      configurable: true,
+    });
+    exitSpy.mockRestore();
+    errorSpy.mockRestore();
+    stderrSpy.mockRestore();
+    vi.unstubAllGlobals();
+    teardownTest();
+    vi.clearAllMocks();
+  });
+
+  it('shows the provider terms with their version and document', async () => {
+    await handleExchangeTermsCommand({ provider: 'fiscal-ai' });
+
+    expect(mockHttpGet).toHaveBeenCalledWith(
+      '/exchange/provider-terms?surface=web'
+    );
+    const output = vi.mocked(writeOutput).mock.calls.at(-1)?.[0] as string;
+    expect(output).toContain('Fiscal.ai (fiscal-ai) Alexandria provider terms');
+    expect(output).toContain('Publisher: Fiscal.ai');
+    expect(output).toContain('Version: 2026-09-12-placeholder');
+    expect(output).toContain('Effective: 2026-09-12');
+    expect(output).toContain(fiscalTerms.terms.document.trimEnd());
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  it('refuses to accept without an interactive terminal', async () => {
+    setTTY(false);
+    process.env.FIRECRAWL_DASHBOARD_URL = 'http://localhost:3001';
+
+    await expect(
+      handleExchangeTermsAcceptCommand({ provider: 'fiscal-ai' })
+    ).rejects.toThrow('exit 2');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Error: Accepting provider terms needs an interactive terminal. Accept in the dashboard at http://localhost:3001/app/alexandria/fiscal-ai instead.'
+    );
+    expect(mockHttpGet).not.toHaveBeenCalled();
+    delete process.env.FIRECRAWL_DASHBOARD_URL;
+  });
+
+  it('accepts after the slug is typed back and posts the displayed version', async () => {
+    setTTY(true);
+    vi.mocked(input).mockResolvedValue('fiscal-ai');
+    const fetchMock = vi.fn().mockResolvedValue({
+      status: 200,
+      json: async () => ({
+        success: true,
+        provider: 'fiscal-ai',
+        version: '2026-09-12-placeholder',
+        digest: 'sha256:abc',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await handleExchangeTermsAcceptCommand({ provider: 'fiscal-ai' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://www.firecrawl.dev/api/exchange/provider-access/accept',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-api-key',
+        }),
+        body: JSON.stringify({
+          provider: 'fiscal-ai',
+          version: '2026-09-12-placeholder',
+          confirmed: true,
+        }),
+      })
+    );
+    expect(stderrSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Accepted fiscal-ai provider terms version 2026-09-12-placeholder (digest sha256:abc)'
+      )
+    );
+    expect(exitSpy).not.toHaveBeenCalled();
   });
 });

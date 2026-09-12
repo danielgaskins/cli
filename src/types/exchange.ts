@@ -41,6 +41,36 @@ export interface ExchangeDiscoverOptions extends ExchangeCommonOptions {
   expand?: string;
 }
 
+/** The API's `requiresAction` payload on a THIRD_PARTY_DATA_TERMS_REQUIRED failure. */
+export interface ExchangeRequiresAction {
+  type: 'accept_terms';
+  terms: string;
+  version: string;
+  url: string;
+}
+
+export interface ExchangeTermsOptions extends ExchangeCommonOptions {
+  /** Provider slug, e.g. `benzinga` */
+  provider: string;
+}
+
+/** One entry of GET /exchange/provider-terms. `terms` is null when none apply. */
+export interface ExchangeProviderTerms {
+  provider: string;
+  name?: string;
+  website?: string;
+  required?: boolean;
+  terms: {
+    key?: string;
+    version: string;
+    effective?: string;
+    publisher?: string;
+    body?: string[];
+    document: string;
+    digest?: string;
+  } | null;
+}
+
 export interface ExchangeRetrieveOptions extends ExchangeCommonOptions {
   requestId?: string;
   /** 1..10 capabilities to execute in one request */
@@ -102,4 +132,6 @@ export interface ExchangeRetrieveResult {
   code?: string;
   /** Charge id from the request-level failure body, when a charge was created */
   chargeId?: string;
+  /** Present when an organization admin must accept provider terms first */
+  requiresAction?: ExchangeRequiresAction;
 }

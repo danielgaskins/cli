@@ -234,7 +234,7 @@ firecrawl scrape https://firecrawl.dev https://firecrawl.dev/blog https://docs.f
 | `--actions <json>`         | JSON actions array to run during scrape                                                                                                                                            |
 | `--actions-file <path>`    | Path to JSON actions file                                                                                                                                                          |
 | `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)                                                                                                                             |
-| `--alexandria <address>`   | Execute an Alexandria capability (`provider/capability`) instead of a URL; repeatable, up to 10. See [`exchange`](#exchange---data-providers) (`--exchange` is a deprecated alias) |
+| `--alexandria <address>`   | Execute an Alexandria capability (`provider/capability`) instead of a URL; repeatable, up to 10. See [`alexandria`](#alexandria---data-providers) (`--exchange`: deprecated alias) |
 | `--options <json>`         | JSON options for the `--alexandria` address at the same position (repeatable)                                                                                                      |
 | `-o, --output <path>`      | Save output to file                                                                                                                                                                |
 | `--json`                   | Output as JSON format                                                                                                                                                              |
@@ -338,7 +338,7 @@ firecrawl search "AI data tools"
 | Option                       | Description                                                                                                                                                                                      |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                                           |
-| `--sources <sources>`        | Comma-separated names or JSON source objects: `web`, `images`, `news`, `alexandria` (default: web). Alexandria returns contracts in `data.tools` -- see [`exchange`](#exchange---data-providers) |
+| `--sources <sources>`        | Comma-separated names or JSON source objects: `web`, `images`, `news`, `alexandria` (default: web). Alexandria contracts are in `data.tools` -- see [`alexandria`](#alexandria---data-providers) |
 | `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`                        |
 | `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                                      |
 | `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                                        |
@@ -423,35 +423,40 @@ access. Discovery does not execute the tools it returns. Web search and selected
 tool execution retain their own charges. The older `exchange discover` and
 `exchange skill` commands remain available for existing proxy integrations.
 
-### `exchange` - Data providers
+### `alexandria` - Data providers
 
-Discover and call Firecrawl Exchange data providers (FRED, financial datasets,
+Discover and call Firecrawl Alexandria data providers (FRED, financial datasets,
 and more). Discovery is free; each `retrieve` spends the credits its contract
-declares. Exchange needs an API key on a team with Exchange access -- there is
-no keyless fallback, and the CLI refuses before sending anything.
+declares. Alexandria needs an API key on a team with Alexandria access -- there is
+no keyless fallback, and the CLI refuses before sending anything. `firecrawl
+exchange` remains a hidden alias for existing scripts.
 
 ```bash
 # Walk the catalogue: cohorts -> providers -> capabilities -> one contract
-firecrawl exchange discover
-firecrawl exchange discover finance
-firecrawl exchange discover finance fred
-firecrawl exchange discover finance fred series/observations
+firecrawl alexandria discover
+firecrawl alexandria discover finance
+firecrawl alexandria discover finance fred
+firecrawl alexandria discover finance fred series/observations
 
 # Inline the whole tree for a cohort
-firecrawl exchange discover finance --expand all --json
+firecrawl alexandria discover finance --expand all --json
 
 # Semantic lookup across the whole catalogue
-firecrawl exchange discover --query "balance sheet" --limit 8
+firecrawl alexandria discover --query "balance sheet" --limit 8
 
 # Execute a capability (reads the contract first to learn its options)
-firecrawl exchange retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
+firecrawl alexandria retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
 
 # Batch up to 10; each --options pairs with the address at the same position
-firecrawl exchange retrieve fred/series/observations fred/series/search \
+firecrawl alexandria retrieve fred/series/observations fred/series/search \
   --options '{"series_id":"CPIAUCSL"}' --options '{"q":"inflation"}' --json
 
 # Same execution through scrape (url-less)
 firecrawl scrape --alexandria fred/series/observations --options '{"series_id":"CPIAUCSL"}'
+
+# Read a paid provider's terms, then accept them (organization admin, interactive)
+firecrawl alexandria terms benzinga
+firecrawl alexandria terms accept benzinga
 
 # Find capabilities beside web results
 firecrawl search "nvidia balance sheet" --sources web,alexandria --json
@@ -463,7 +468,17 @@ item with its `creditsCost` (`--json` mirrors the API envelope:
 error inside the batch is reported per item and does not fail the request; the
 exit code is 1 only when every item failed, when the request itself was
 rejected (403 team not enabled, 402 insufficient credits, 409 duplicate
-request), or in keyless mode.
+request), or in keyless mode. With `--json`, a rejected request writes
+`{ success: false, requestId, code, error, requiresAction? }` to stdout.
+
+Paid providers require an organization admin to accept their terms once. Until
+then the request is rejected with `THIRD_PARTY_DATA_TERMS_REQUIRED`, no credits
+are charged, and the CLI prints the provider, version and dashboard URL (in
+`--json`, `requiresAction: { type: "accept_terms", terms, version, url }`). An
+agent should show that URL and stop. A human admin accepts in the dashboard or
+runs `firecrawl alexandria terms accept <provider>`, which shows the document
+and asks them to type the provider slug; it refuses without an interactive
+terminal and has no `--yes`. Afterwards, rerun with the same `--request-id`.
 
 Execution generates a request ID once and sends `x-request-id`. It returns the ID
 and prints it on stderr, including after a failure. Retry the identical payload
@@ -491,6 +506,14 @@ credits before calling a provider. `perRecord` prices depend on returned records
 | `--options <json>`   | JSON options for the address at the same position (repeatable) |
 | `--timeout <ms>`     | Timeout in milliseconds                                        |
 | `--json`, `--pretty` | Output the `/v2/scrape` envelope as JSON                       |
+
+#### `terms` Options
+
+| Option               | Description                                                                 |
+| -------------------- | --------------------------------------------------------------------------- |
+| `<provider>`         | Provider slug, e.g. `benzinga`                                              |
+| `accept <provider>`  | Accept the displayed version for your organization (interactive, admin key) |
+| `--json`, `--pretty` | Output the provider's terms entry as JSON (show only)                       |
 
 ---
 

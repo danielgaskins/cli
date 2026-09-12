@@ -28,6 +28,10 @@ import { createMonitorCommand } from './commands/monitor';
 import { handleSearchCommand } from './commands/search';
 import { addAlexandriaOptions, parseSearchSources } from './utils/alexandria';
 import { handleSkillCommand } from './commands/skills';
+import {
+  handleExchangeTermsAcceptCommand,
+  handleExchangeTermsCommand,
+} from './commands/terms';
 import { createFindToolsCommand } from './commands/find-tools';
 import { handleDeveloperSearchCommand } from './commands/developer';
 import {
@@ -1112,23 +1116,26 @@ function createSearchCommand(): Command {
 }
 
 /**
- * Create and configure the exchange command group
+ * Create and configure the alexandria command group. Registered twice: as
+ * `alexandria` and as the hidden legacy alias `exchange`.
  */
-function createExchangeCommand(): Command {
-  const exchangeCmd = new Command('exchange')
+function createExchangeCommand(name: string = 'alexandria'): Command {
+  const exchangeCmd = new Command(name)
     .description(
-      'Discover and call Firecrawl Exchange data providers. Requires an API key on a team with Exchange access (no keyless fallback).'
+      'Discover and call Firecrawl Alexandria data providers. Requires an API key on a team with Alexandria access (no keyless fallback).'
     )
     .addHelpText(
       'after',
       `
 Examples:
-  $ firecrawl exchange discover                                    # cohorts
-  $ firecrawl exchange discover finance                            # providers in a cohort
-  $ firecrawl exchange discover finance fred                       # what a provider can do
-  $ firecrawl exchange discover finance fred series/observations   # full contract
-  $ firecrawl exchange discover --query "balance sheet" --limit 8  # semantic lookup
-  $ firecrawl exchange retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
+  $ firecrawl ${name} discover                                    # cohorts
+  $ firecrawl ${name} discover finance                            # providers in a cohort
+  $ firecrawl ${name} discover finance fred                       # what a provider can do
+  $ firecrawl ${name} discover finance fred series/observations   # full contract
+  $ firecrawl ${name} discover --query "balance sheet" --limit 8  # semantic lookup
+  $ firecrawl ${name} retrieve fred/series/observations --options '{"series_id":"CPIAUCSL"}'
+  $ firecrawl ${name} terms benzinga                              # read a provider's terms
+  $ firecrawl ${name} terms accept benzinga                       # accept them (admin, interactive)
   $ firecrawl search "nvidia balance sheet" --sources web,alexandria --json`
     );
 
@@ -1225,6 +1232,38 @@ Examples:
         json: options.json,
         pretty: options.pretty,
       });
+    });
+
+  const termsCmd = exchangeCmd
+    .command('terms')
+    .description(
+      "Show an Alexandria provider's terms document. Paid providers need an organization admin to accept their terms before retrieve runs."
+    )
+    .argument('<provider>', 'Provider slug, e.g. benzinga')
+    .option(
+      '-k, --api-key <key>',
+      'Firecrawl API key (overrides global --api-key)'
+    )
+    .option('--api-url <url>', 'API URL (overrides global --api-url)')
+    .option('-o, --output <path>', 'Output file path (default: stdout)')
+    .option('--json', 'Output the provider entry as compact JSON', false)
+    .option('--pretty', 'Pretty print JSON output', false)
+    .action(async (provider: string, options) => {
+      await handleExchangeTermsCommand({ ...options, provider });
+    });
+  termsCmd
+    .command('accept')
+    .description(
+      "Accept a provider's current terms for your organization. Interactive only: shows the document and asks you to type the provider slug. Needs a team admin's own API key."
+    )
+    .argument('<provider>', 'Provider slug, e.g. benzinga')
+    .option(
+      '-k, --api-key <key>',
+      'Firecrawl API key (overrides global --api-key)'
+    )
+    .option('--api-url <url>', 'API URL (overrides global --api-url)')
+    .action(async (provider: string, options) => {
+      await handleExchangeTermsAcceptCommand({ ...options, provider });
     });
 
   exchangeCmd.addCommand(createFindToolsCommand('tools'));
@@ -2286,6 +2325,7 @@ program.addCommand(createParseCommand());
 program.addCommand(createMonitorCommand());
 program.addCommand(createSearchCommand());
 program.addCommand(createExchangeCommand());
+program.addCommand(createExchangeCommand('exchange'), { hidden: true });
 program.addCommand(createFindToolsCommand());
 program.addCommand(createDeveloperCommand());
 program.addCommand(createResearchCommand());

@@ -2,6 +2,8 @@
  * Types and interfaces for the scrape command
  */
 
+import type { ExchangeRequiresAction } from './exchange';
+
 export type ScrapeFormat =
   | 'markdown'
   | 'html'
@@ -80,4 +82,8 @@ export interface ScrapeResult {
   success: boolean;
   data?: any;
   error?: string;
+  /** Error code from the API failure body, when the SDK error carried one */
+  code?: string;
+  /** Present when an organization admin must accept provider terms first */
+  requiresAction?: ExchangeRequiresAction;
 }
