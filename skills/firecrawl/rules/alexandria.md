@@ -5,7 +5,7 @@ Use Alexandria when the task needs a provider's structured data. These commands 
 ## Choose the discovery request
 
 - **Describe the data needed:** `firecrawl search "your intent" --sources alexandria --limit 2 --json`. Add `web` to the sources to also retrieve web results. Search requires a query.
-- **Match tools to result domains:** add `--skills` to Search. This is optional and can add lookup latency. Semantic and contextual matches share `data.tools`.
+- **Match tools to result domains:** add `--domain-tools` to Search. This is optional and can add lookup latency. Semantic and contextual matches share `data.tools`.
 - **Already have a URL or provider:** use `find-tools`, without a search query. It looks up the catalogue; it does not fetch the supplied page or execute the tools it finds.
 
 Inspect a Search tool's `provider`, `capability`, `options`, `requiresOneOf`, `response`, `examples`, `creditsCost`, and `perRecord`. `matchedBy` and `matchedUrls` explain why it appeared. A discovery `warning` means lookup was unavailable, rather than proving no tools match. A zero-result CLI search may leave no new output file; do not read a stale file from a previous run.
