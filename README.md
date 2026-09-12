@@ -335,23 +335,23 @@ firecrawl search "AI data tools"
 
 #### Search Options
 
-| Option                       | Description                                                                                                                                                                              |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                                   |
+| Option                       | Description                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--limit <n>`                | Maximum results (default: 5, max: 100)                                                                                                                                                           |
 | `--sources <sources>`        | Comma-separated names or JSON source objects: `web`, `images`, `news`, `alexandria` (default: web). Alexandria returns contracts in `data.tools` -- see [`exchange`](#exchange---data-providers) |
-| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`                |
-| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                              |
-| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                                |
-| `--country <code>`           | ISO country code (default: US)                                                                                                                                                           |
-| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                                 |
-| `--highlights`               | Return query-relevant highlights for each result                                                                                                                                         |
-| `--no-highlights`            | Keep the original search snippets                                                                                                                                                        |
-| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                                       |
-| `--scrape`                   | Enable scraping of search results                                                                                                                                                        |
-| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                               |
-| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                                  |
-| `-o, --output <path>`        | Save to file                                                                                                                                                                             |
-| `--json`                     | Output as compact JSON                                                                                                                                                                   |
+| `--categories <categories>`  | Comma-separated: `github`, `research` (research-affiliated websites -- for papers use [`research search-papers`](#research---search-research-papers)), `pdf`, `developer`                        |
+| `--tbs <value>`              | Time filter: `qdr:h` (hour), `qdr:d` (day), `qdr:w` (week), `qdr:m` (month), `qdr:y` (year)                                                                                                      |
+| `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                                                        |
+| `--country <code>`           | ISO country code (default: US)                                                                                                                                                                   |
+| `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                                                         |
+| `--highlights`               | Return query-relevant highlights for each result                                                                                                                                                 |
+| `--no-highlights`            | Keep the original search snippets                                                                                                                                                                |
+| `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                                                               |
+| `--scrape`                   | Enable scraping of search results                                                                                                                                                                |
+| `--scrape-formats <formats>` | Scrape formats when `--scrape` enabled (default: markdown)                                                                                                                                       |
+| `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                                          |
+| `-o, --output <path>`        | Save to file                                                                                                                                                                                     |
+| `--json`                     | Output as compact JSON                                                                                                                                                                           |
 
 #### Examples
 
@@ -390,7 +390,7 @@ firecrawl search "AI startups funding" --sources news --tbs qdr:w --limit 15
 firecrawl search "podcast transcripts" --sources web,alexandria --limit 2 --json
 
 # Include tools matched to query mentions and result domains
-firecrawl search "podcast transcripts" --sources web,alexandria --skills --json
+firecrawl search "podcast transcripts" --sources web,alexandria --domain-tools --json
 
 # Explore providers without a search query
 firecrawl find-tools --categories finance --limit 2 --json
@@ -406,7 +406,7 @@ firecrawl find-tools --request '<next request JSON>' --json
 ```
 
 Search requires a query. `sources: ["alexandria"]` finds tools by meaning;
-`--skills` adds contextual matches to the same `data.tools` array. Each contract
+`--domain-tools` adds contextual matches to the same `data.tools` array. Each contract
 includes inputs, response fields, examples, price, `matchedBy`, and `matchedUrls`.
 Check the response's `warning` if discovery is unavailable. The legacy `exchange`
 source name is normalized to `alexandria`.

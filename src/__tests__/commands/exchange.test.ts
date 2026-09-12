@@ -185,7 +185,9 @@ describe('exchange helpers', () => {
             chargeId: 'c1',
           })
         )
-      ).toBe('This request id was already charged. (duplicate_request)');
+      ).toBe(
+        'This request id was already charged. (duplicate_request) — chargeId: c1 — Use a new --request-id for a new payload.'
+      );
     });
 
     it('falls back to the status and then the error message', () => {

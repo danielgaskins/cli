@@ -37,10 +37,10 @@ firecrawl search "podcast conversations about AI agents" \
 
 # Web pages and semantic tools, with optional domain matches
 firecrawl search "podcast conversations about AI agents" \
-  --sources web,alexandria --skills --limit 2 --json -o .firecrawl/web-and-tools.json
+  --sources web,alexandria --domain-tools --limit 2 --json -o .firecrawl/web-and-tools.json
 ```
 
-Search always needs a non-empty query. `--sources alexandria` searches tools semantically; `--skills` opts into additional contextual matches. Both return contracts in `data.tools`, with `matchedBy` and `matchedUrls` explaining relevance. Omit `--skills` when semantic matches are enough. Discovery does not execute the returned tools.
+Search always needs a non-empty query. `--sources alexandria` searches tools semantically; `--domain-tools` opts into additional contextual matches. Both return contracts in `data.tools`, with `matchedBy` and `matchedUrls` explaining relevance. Omit `--domain-tools` when semantic matches are enough. Discovery does not execute the returned tools.
 
 For a known URL or provider, use `firecrawl find-tools`; catalogue filters belong there. Follow the [Alexandria workflow](../firecrawl/rules/alexandria.md) to read contracts, follow `next`, and execute a selected tool through `scrape --exchange`.
 

@@ -427,6 +427,10 @@ function createScrapeCommand(): Command {
       'Redact personally identifiable information from returned content',
       false
     )
+    .option(
+      '--domain-tools',
+      'Include domain-matched tool contracts alongside the scrape result'
+    )
     .option('--schema <json>', 'JSON schema for structured extraction')
     .option('--schema-file <path>', 'Path to JSON schema file')
     .option('--actions <json>', 'JSON actions array to run during scrape')
@@ -1070,6 +1074,7 @@ function createSearchCommand(): Command {
         query: query ?? '',
         limit: options.limit,
         sources,
+        domainTools: options.domainTools,
         skills: options.skills,
         categories,
         tbs: options.tbs,

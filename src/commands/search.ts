@@ -50,11 +50,14 @@ export async function executeSearch(
         typeof source === 'string' ? { type: source } : source
       );
     }
-    if (options.skills) {
+    if (options.domainTools || options.skills) {
       assertExchangeKeyed(options.apiKey, options.apiUrl);
-      searchParams.skills = true;
+      searchParams.domainTools = true;
     }
-    if (!options.query.trim()) throw new Error('A query is required for search. Use firecrawl find-tools for catalogue lookup.');
+    if (!options.query.trim())
+      throw new Error(
+        'A query is required for search. Use firecrawl find-tools for catalogue lookup.'
+      );
 
     // Add categories if specified
     if (options.categories && options.categories.length > 0) {
@@ -151,8 +154,6 @@ export async function executeSearch(
     // exactly as received.
     if (payload.exchange)
       data.exchange = payload.exchange as ExchangeSearchResult[];
-    if (payload['exchange-providers'])
-      data.exchange = payload['exchange-providers'];
 
     return {
       success: true,

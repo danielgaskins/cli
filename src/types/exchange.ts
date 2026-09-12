@@ -98,4 +98,8 @@ export interface ExchangeRetrieveResult {
   /** Sum of the successful items' creditsCost, passed through untouched */
   creditsCost?: number;
   error?: string;
+  /** Error code from the request-level failure body, e.g. `duplicate_request` */
+  code?: string;
+  /** Charge id from the request-level failure body, when a charge was created */
+  chargeId?: string;
 }

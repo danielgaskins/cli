@@ -72,6 +72,8 @@ export interface ScrapeOptions {
   lockdown?: boolean;
   /** Redact personally identifiable information from returned content */
   redactPII?: boolean;
+  /** Include domain-matched contracts in tools alongside semantic matches */
+  domainTools?: boolean;
 }
 
 export interface ScrapeResult {

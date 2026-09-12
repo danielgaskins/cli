@@ -369,6 +369,23 @@ describe('executeScrape', () => {
       });
     });
 
+    it('should include domainTools when provided', async () => {
+      const mockResponse = { markdown: '# Test', tools: [{ name: 'tool' }] };
+      mockClient.scrape.mockResolvedValue(mockResponse);
+
+      const result = await executeScrape({
+        url: 'https://example.com',
+        domainTools: true,
+      });
+
+      expect(mockClient.scrape).toHaveBeenCalledWith('https://example.com', {
+        formats: ['markdown'],
+        integration: 'cli',
+        domainTools: true,
+      });
+      expect(result.data?.tools).toEqual([{ name: 'tool' }]);
+    });
+
     it('should not include location parameter when not provided', async () => {
       const mockResponse = { markdown: '# Test' };
       mockClient.scrape.mockResolvedValue(mockResponse);

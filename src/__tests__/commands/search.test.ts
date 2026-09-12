@@ -93,14 +93,36 @@ describe('executeSearch', () => {
     });
 
     it('preserves unified contracts and rejects catalogue browsing in search', async () => {
-      const tools = [{ id: 'particle/podcasts/episodes/search', matchedBy: ['semantic', 'domain'], matchedUrls: ['https://podcasts.apple.com'], options: [{ name: 'semantic_search', type: 'string' }] }];
+      const tools = [
+        {
+          id: 'particle/podcasts/episodes/search',
+          matchedBy: ['semantic', 'domain'],
+          matchedUrls: ['https://podcasts.apple.com'],
+          options: [{ name: 'semantic_search', type: 'string' }],
+        },
+      ];
       mockHttpPost.mockResolvedValue(mockSearchResponse({ tools }));
-      const result = await executeSearch({ query: 'podcast episodes', sources: ['alexandria'], skills: true });
+      const result = await executeSearch({
+        query: 'podcast episodes',
+        sources: ['alexandria'],
+        domainTools: true,
+      });
       expect(result.data?.tools).toEqual(tools);
-      expect(mockHttpPost.mock.calls[0][1]).toMatchObject({ skills: true });
+      expect(mockHttpPost.mock.calls[0][1]).toMatchObject({
+        domainTools: true,
+      });
       mockHttpPost.mockClear();
-      expect((await executeSearch({ query: '', sources: ['alexandria'] })).success).toBe(false);
-      expect((await executeSearch({ query: 'podcasts', sources: [{type: 'alexandria', mode: 'browse'}] })).success).toBe(false);
+      expect(
+        (await executeSearch({ query: '', sources: ['alexandria'] })).success
+      ).toBe(false);
+      expect(
+        (
+          await executeSearch({
+            query: 'podcasts',
+            sources: [{ type: 'alexandria', mode: 'browse' }],
+          })
+        ).success
+      ).toBe(false);
       expect(mockHttpPost).not.toHaveBeenCalled();
     });
 

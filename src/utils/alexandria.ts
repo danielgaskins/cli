@@ -1,15 +1,9 @@
-import type { Command } from 'commander';
+import { Option, type Command } from 'commander';
 
 export type SearchSourceInput =
   | string
   | ({ type: string } & Record<string, unknown>);
-const sourceNames = [
-  'web',
-  'images',
-  'news',
-  'alexandria',
-  'exchange-providers',
-];
+const sourceNames = ['web', 'images', 'news', 'alexandria'];
 export function normalizeSources(
   sources: SearchSourceInput[]
 ): SearchSourceInput[] {
@@ -20,7 +14,7 @@ export function normalizeSources(
       throw new Error(`Invalid source: ${String(name)}`);
     if (
       typeof source !== 'string' &&
-      ['alexandria', 'exchange-providers'].includes(type) &&
+      type === 'alexandria' &&
       Object.keys(source).some((key) => key !== 'type')
     ) {
       throw new Error(
@@ -31,17 +25,23 @@ export function normalizeSources(
   });
 }
 export function hasAlexandria(sources: SearchSourceInput[] = []): boolean {
-  return sources.some((source) =>
-    ['alexandria', 'exchange-providers', 'exchange'].includes(
-      typeof source === 'string' ? source : source.type
-    )
+  return sources.some(
+    (source) =>
+      (typeof source === 'string' ? source : source.type) === 'alexandria'
   );
 }
 export function addAlexandriaOptions(command: Command): Command {
-  return command.option(
-    '--skills',
-    'Include domain-matched contracts in tools alongside semantic matches'
-  );
+  return command
+    .option(
+      '--domain-tools',
+      'Include domain-matched contracts in tools alongside semantic matches'
+    )
+    .addOption(
+      new Option(
+        '--skills',
+        '(deprecated, use --domain-tools) Include domain-matched contracts in tools alongside semantic matches'
+      ).hideHelp()
+    );
 }
 export function parseSearchSources(
   raw: string | undefined

@@ -137,20 +137,61 @@ export function buildDiscoverPath(options: ExchangeDiscoverOptions): string {
 }
 
 /**
+ * One-line, per-code hint for the request-level failure codes the API
+ * returns from `{ success: false, error, code, chargeId? }` bodies:
+ * `duplicate_request` (409), `request_in_flight` (409),
+ * `request_unresolved` (503), `unknown_provider` (404),
+ * `insufficient_credits` (402), `billing_unavailable` (503).
+ */
+function exchangeErrorHint(code?: string): string | undefined {
+  switch (code) {
+    case 'request_in_flight':
+      return 'Retry with the same --request-id once the in-flight request finishes.';
+    case 'request_unresolved':
+      return 'Keep using this --request-id; do not create a new one until it resolves.';
+    case 'duplicate_request':
+      return 'Use a new --request-id for a new payload.';
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Pull `{error, code, chargeId}` off an axios error's response body, when
+ * present.
+ */
+function exchangeErrorDetails(error: unknown): {
+  message?: string;
+  code?: string;
+  chargeId?: string;
+} {
+  const response = (error as any)?.response;
+  const body = response?.data;
+  if (body && typeof body === 'object') {
+    return {
+      message: typeof body.error === 'string' ? body.error : undefined,
+      code: typeof body.code === 'string' ? body.code : undefined,
+      chargeId: typeof body.chargeId === 'string' ? body.chargeId : undefined,
+    };
+  }
+  return {};
+}
+
+/**
  * The SDK's HTTP layer throws an axios error on non-2xx. Prefer the API's own
  * `{error, code}` body (403 not enabled, 402 insufficient credits, 409
  * duplicate request) over "Request failed with status code N".
  */
 export function exchangeErrorMessage(error: unknown): string {
-  const response = (error as any)?.response;
-  const body = response?.data;
-  if (body && typeof body === 'object') {
-    const message = typeof body.error === 'string' ? body.error : undefined;
-    const code = typeof body.code === 'string' ? body.code : undefined;
-    if (message) {
-      return code ? `${message} (${code})` : message;
-    }
+  const { message, code, chargeId } = exchangeErrorDetails(error);
+  if (message) {
+    const parts = [code ? `${message} (${code})` : message];
+    if (chargeId) parts.push(`chargeId: ${chargeId}`);
+    const hint = exchangeErrorHint(code);
+    if (hint) parts.push(hint);
+    return parts.join(' — ');
   }
+  const response = (error as any)?.response;
   if (typeof response?.status === 'number') {
     return `Firecrawl request failed (HTTP ${response.status})`;
   }
@@ -225,7 +266,14 @@ export async function executeExchangeRetrieve(
       creditsCost: envelope.data?.creditsCost,
     };
   } catch (error) {
-    return { success: false, requestId, error: exchangeErrorMessage(error) };
+    const { code, chargeId } = exchangeErrorDetails(error);
+    return {
+      success: false,
+      requestId,
+      error: exchangeErrorMessage(error),
+      code,
+      chargeId,
+    };
   }
 }
 

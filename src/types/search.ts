@@ -3,9 +3,7 @@
  */
 
 import type { ScrapeFormat } from './scrape';
-import type {
-  SearchSourceInput,
-} from '../utils/alexandria';
+import type { SearchSourceInput } from '../utils/alexandria';
 
 export type SearchSource = SearchSourceInput;
 export type SearchCategory = 'github' | 'research' | 'pdf' | 'developer';
@@ -21,6 +19,8 @@ export interface SearchOptions {
   limit?: number;
   /** Sources to search: web, images, news, exchange (default: web) */
   sources?: SearchSource[];
+  domainTools?: boolean;
+  /** @deprecated use domainTools */
   skills?: boolean;
   /** Categories to filter results: github, research, pdf, developer */
   categories?: SearchCategory[];

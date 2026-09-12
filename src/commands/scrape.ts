@@ -20,6 +20,7 @@ import { executeMap } from './map';
 import { getStatus } from './status';
 import { buildExchangeCalls, handleExchangeRetrieveCommand } from './exchange';
 import type { ExchangeRetrieveOptions } from '../types/exchange';
+import { formatTools } from '../utils/alexandria';
 
 /**
  * `firecrawl scrape --exchange provider/capability --options '<json>'`:
@@ -163,6 +164,10 @@ export async function executeScrape(
     scrapeParams.redactPII = true;
   }
 
+  if (options.domainTools) {
+    scrapeParams.domainTools = true;
+  }
+
   // Execute scrape with timing - only wrap the scrape call in try-catch
   const requestStartTime = Date.now();
 
@@ -225,6 +230,19 @@ export async function handleScrapeCommand(
   options: ScrapeOptions
 ): Promise<void> {
   const result = await executeScrape(options);
+
+  // --domain-tools: print the matched tools alongside the scrape output,
+  // unless JSON is forced (JSON output already includes data.tools as-is).
+  if (
+    options.domainTools &&
+    result.success &&
+    result.data?.tools &&
+    !options.json &&
+    !options.output
+  ) {
+    console.error(formatTools(result.data.tools));
+    console.error('');
+  }
 
   // Query mode: output answer directly
   if (options.query && result.success && result.data?.answer) {
