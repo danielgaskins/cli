@@ -242,18 +242,17 @@ export function parseEndpointFeedbackCliOptions(options: {
 export async function executeEndpointFeedback(
   options: EndpointFeedbackOptions
 ): Promise<EndpointFeedbackResult> {
-  if (isEndpointFeedbackDisabledLocally()) {
-    return {
-      success: true,
-      disabled: true,
-      disabledSource: 'env',
-      creditsRefunded: 0,
-    };
-  }
-
   try {
     const config = getConfig();
     const apiKey = options.apiKey || config.apiKey;
+    if (apiKey && isEndpointFeedbackDisabledLocally()) {
+      return {
+        success: true,
+        disabled: true,
+        disabledSource: 'env',
+        creditsRefunded: 0,
+      };
+    }
     const apiUrl = (options.apiUrl || config.apiUrl || DEFAULT_API_URL).replace(
       /\/$/,
       ''

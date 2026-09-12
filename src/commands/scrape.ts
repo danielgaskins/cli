@@ -1,7 +1,4 @@
-import {
-  reportFeedbackInvitation,
-  filterFeedbackMetadata,
-} from '../utils/feedback-invitation';
+import { reportFeedbackInvitation } from '../utils/feedback-invitation';
 /**
  * Scrape command implementation
  */
@@ -155,8 +152,6 @@ export async function executeScrape(
         ...scrapeParams,
       });
       result = json?.data ?? json;
-      if (result?.metadata)
-        result.metadata = filterFeedbackMetadata(result.metadata);
       reportFeedbackInvitation(result?.metadata, 'scrape');
     } else {
       const app = getClient({

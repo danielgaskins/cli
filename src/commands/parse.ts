@@ -1,8 +1,4 @@
-import {
-  reportFeedbackInvitation,
-  filterFeedbackMetadata,
-} from '../utils/feedback-invitation';
-import { feedbackPreferenceHeaders } from '../utils/feedback-settings';
+import { reportFeedbackInvitation } from '../utils/feedback-invitation';
 /**
  * Parse command implementation
  *
@@ -191,7 +187,6 @@ export async function executeParse(
       method: 'POST',
       headers: {
         ...(!keyless && apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-        ...feedbackPreferenceHeaders(),
       },
       body: form,
     });
@@ -201,8 +196,6 @@ export async function executeParse(
 
     const payload = (await response.json().catch(() => ({}))) as any;
 
-    if (keyless && payload?.data?.metadata)
-      payload.data.metadata = filterFeedbackMetadata(payload.data.metadata);
     if (keyless)
       reportFeedbackInvitation(
         payload?.data?.metadata ?? payload?.metadata,

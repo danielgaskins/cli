@@ -36,9 +36,11 @@ describe('executeEndpointFeedback', () => {
   });
 
   it.each([undefined, 'https://api.firecrawl.dev'])(
-    'submits keyless evidence with API URL %s',
+    'submits keyless evidence despite authenticated opt-out with API URL %s',
     async (apiUrl) => {
       vi.stubEnv('FIRECRAWL_API_KEY', '');
+      vi.stubEnv('FIRECRAWL_NO_ENDPOINT_FEEDBACK', '1');
+      vi.stubEnv('FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK', '1');
       initializeConfig({
         apiKey: undefined,
         apiUrl: 'https://api.firecrawl.dev',

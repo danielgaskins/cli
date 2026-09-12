@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 it.each(['/v2/search', '/v2/scrape'])(
-  'forwards invitation opt-out for %s without changing the operation',
+  'does not send an invitation opt-out for keyless %s',
   async (path) => {
     vi.stubEnv('FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK', 'true');
     const fetch = vi
@@ -23,10 +23,12 @@ it.each(['/v2/search', '/v2/scrape'])(
     expect(fetch.mock.calls[0][1]).toMatchObject({
       headers: {
         'Content-Type': 'application/json',
-        'x-firecrawl-no-feedback': '1',
       },
       body: JSON.stringify({ example: 'fixture' }),
     });
     expect(fetch.mock.calls[0][1].headers.Authorization).toBeUndefined();
+    expect(
+      fetch.mock.calls[0][1].headers['x-firecrawl-no-feedback']
+    ).toBeUndefined();
   }
 );

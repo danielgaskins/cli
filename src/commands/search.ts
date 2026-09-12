@@ -1,7 +1,4 @@
-import {
-  reportFeedbackInvitation,
-  filterFeedbackMetadata,
-} from '../utils/feedback-invitation';
+import { reportFeedbackInvitation } from '../utils/feedback-invitation';
 /**
  * Search command implementation
  */
@@ -114,6 +111,7 @@ export async function executeSearch(
         string,
         any
       >;
+      reportFeedbackInvitation(envelope.metadata, 'search');
     } else {
       const app = getClient({ apiKey: options.apiKey, apiUrl: options.apiUrl });
       const httpResponse = await (app as any).http.post(
@@ -122,8 +120,6 @@ export async function executeSearch(
       );
       envelope = (httpResponse?.data ?? {}) as Record<string, any>;
     }
-    envelope.metadata = filterFeedbackMetadata(envelope.metadata);
-    reportFeedbackInvitation(envelope.metadata, 'search');
     const payload = (envelope.data ?? {}) as Record<string, any>;
 
     const data: SearchResultData = {};

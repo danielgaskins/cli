@@ -418,7 +418,7 @@ function createScrapeCommand(): Command {
 
     .addHelpText(
       'after',
-      '\nOptional feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
+      '\nOptional keyless feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
     )
     .action(async (positionalArgs, options) => {
       // Collect URLs from positional args and --url option
@@ -871,7 +871,7 @@ Max upload size: 50 MB
     )
     .addHelpText(
       'after',
-      '\nOptional feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
+      '\nOptional keyless feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
     )
     .action(async (file: string, options) => {
       let format: string | undefined;
@@ -983,7 +983,7 @@ function createSearchCommand(): Command {
     .option('--json', 'Output as compact JSON', false)
     .addHelpText(
       'after',
-      '\nOptional feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
+      '\nOptional keyless feedback: firecrawl feedback <search|scrape|parse> <jobId> --rating <rating> --task <task> --assessment <assessment> --observations-file <path>. Use only evidence already available. Invitations and job references appear in metadata or stderr. Feedback does not consume operation quota.'
     )
     .action(async (query, options) => {
       // Parse sources

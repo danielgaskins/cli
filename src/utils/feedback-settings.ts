@@ -10,9 +10,3 @@ export function isEndpointFeedbackDisabledLocally(
     /^(1|true|yes|on)$/i.test(env[key]?.trim() ?? '')
   );
 }
-
-export function feedbackPreferenceHeaders(): Record<string, string> {
-  return isEndpointFeedbackDisabledLocally()
-    ? { 'x-firecrawl-no-feedback': '1' }
-    : {};
-}

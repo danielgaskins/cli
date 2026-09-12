@@ -495,10 +495,7 @@ firecrawl feedback scrape 0193f6c5-1234-7890-abcd-1234567890ab \
 Keep notes and metadata small. Do not send raw scrape or parse outputs as
 feedback.
 
-Set `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` to make `firecrawl feedback` skip
-endpoint feedback calls silently. Search, Scrape, and Parse also send
-`x-firecrawl-no-feedback: 1` so the API does not issue or count invitations
-that the CLI suppresses.
+Set `FIRECRAWL_NO_ENDPOINT_FEEDBACK=1` or `FIRECRAWL_DISABLE_ENDPOINT_FEEDBACK=1` to skip authenticated endpoint feedback calls. These flags do not suppress keyless invitations or submissions. The API controls keyless invitation frequency and eligibility. Submitting feedback remains optional and is never required for continued keyless access.
 
 #### Feedback Options
 
