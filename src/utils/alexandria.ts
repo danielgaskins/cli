@@ -25,10 +25,10 @@ export function normalizeSources(
   });
 }
 export function hasAlexandria(sources: SearchSourceInput[] = []): boolean {
-  return sources.some(
-    (source) =>
-      (typeof source === 'string' ? source : source.type) === 'alexandria'
-  );
+  return sources.some((source) => {
+    const name = typeof source === 'string' ? source : source?.type;
+    return name === 'alexandria' || name === 'exchange';
+  });
 }
 export function addAlexandriaOptions(command: Command): Command {
   return command.option(

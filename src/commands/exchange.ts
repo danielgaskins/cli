@@ -29,7 +29,7 @@ import {
 import { randomUUID } from 'node:crypto';
 
 export const EXCHANGE_KEY_REQUIRED =
-  'Exchange requires a Firecrawl API key on a team with Exchange access. ' +
+  'Alexandria requires a Firecrawl API key on a team with Alexandria access. ' +
   'Set FIRECRAWL_API_KEY, pass --api-key, or run "firecrawl login".';
 
 const MAX_EXCHANGE_CALLS = 10;
