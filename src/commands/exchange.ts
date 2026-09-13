@@ -281,7 +281,7 @@ export async function executeExchangeRetrieve(
     const envelope = (response?.data ?? {}) as ExchangeScrapeResponse;
 
     if (envelope.success === false) {
-      throw new Error(envelope.error || 'Exchange request failed');
+      throw new Error(envelope.error || 'Alexandria request failed');
     }
 
     return {

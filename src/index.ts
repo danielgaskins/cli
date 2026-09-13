@@ -460,7 +460,7 @@ function createScrapeCommand(): Command {
     )
     .option(
       '--request-id <id>',
-      'Execution ID; reuse for retries of the same Exchange payload'
+      'Execution ID; reuse for retries of the same Alexandria payload'
     )
 
     .action(async (positionalArgs, options) => {
@@ -1141,7 +1141,7 @@ Examples:
   exchangeCmd
     .command('discover')
     .description(
-      'Browse the Exchange catalogue. No arguments lists cohorts; add a cohort, then a provider, then a capability address to read its full contract (options, returns, creditsCost). --query ranks capabilities semantically across the whole catalogue.'
+      'Browse the Alexandria catalogue. No arguments lists cohorts; add a cohort, then a provider, then a capability address to read its full contract (options, returns, creditsCost). --query ranks capabilities semantically across the whole catalogue.'
     )
     .argument('[cohort]', 'Cohort slug, e.g. finance')
     .argument('[provider]', 'Provider slug, e.g. fred')
@@ -1186,7 +1186,7 @@ Examples:
   exchangeCmd
     .command('retrieve')
     .description(
-      'Execute one or more Exchange capabilities (up to 10) through /v2/scrape and print each result with its creditsCost. Read the contract first with `exchange discover`.'
+      'Execute one or more Alexandria capabilities (up to 10) through /v2/scrape and print each result with its creditsCost. Read the contract first with `alexandria discover`.'
     )
     .argument(
       '<addresses...>',
