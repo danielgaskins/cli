@@ -88,6 +88,40 @@ describe('executeEndpointFeedback', () => {
     }
   );
 
+  it('preserves replacement sources on keyless irrelevant Search observations', async () => {
+    vi.stubEnv('FIRECRAWL_API_KEY', '');
+    initializeConfig({
+      apiKey: undefined,
+      apiUrl: 'https://api.firecrawl.dev',
+    });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true, feedbackId: 'feedback-1' }),
+    });
+    const observations = [
+      {
+        kind: 'irrelevant',
+        reason: 'aggregator_over_official',
+        position: 1,
+        knownSources: ['https://example.com/official'],
+        basis: 'output',
+        detail: 'The official reference should rank before this aggregator.',
+      },
+    ];
+    await executeEndpointFeedback({
+      endpoint: 'search',
+      jobId: '00000000-0000-4000-8000-000000000001',
+      rating: 'partial',
+      task: 'Find the official retry reference',
+      assessment: 'An aggregator ranked above the official reference.',
+      observations,
+    });
+    const [, init] = mockFetch.mock.calls[0];
+    expect(init.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(init.body).observations).toEqual(observations);
+  });
+
   it('posts generic endpoint feedback to /v2/feedback', async () => {
     mockFetch.mockResolvedValue({
       ok: true,

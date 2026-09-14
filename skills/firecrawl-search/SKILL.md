@@ -46,9 +46,10 @@ Choose the feedback contract that matches the search job's authentication. A ret
 
 Use `firecrawl feedback search <jobId>` with `--rating`, `--task`, `--assessment`, and `--observations-file`. The task describes what the search needed to answer; the assessment describes how well it answered that task. Supply 1-20 observations:
 
-- Useful or irrelevant results: `kind`, `source` (`web`, `images`, or `news`), and one-based `position` within that delivered group.
-- Missing information: `kind: "missing"`, `topic`, and optional `knownSources` URLs, only when already known.
-- Every observation requires `detail` and `basis`: `output`, `source_comparison`, or `expectation`. A source comparison also requires `comparison: {reference, detail}`. Use expectations for gaps that have not been verified against a source.
+- Useful or irrelevant results: `kind` and one-based `position` within the delivered group. `source` (`web`, `images`, or `news`) is required for multi-source jobs and otherwise defaults to `web`. Irrelevant results also require `reason`; see command help for allowed values.
+- Missing information: `kind: "missing"` and `vertical`; `topic` is optional. `vertical` is optional on useful and irrelevant results. See command help for allowed verticals.
+- Missing and irrelevant observations may include `knownSources`: up to 20 HTTP(S) URLs, only when already known. These identify absent content or the source that should have ranked instead. Unmentioned results are unassessed; a full ranking is not required.
+- Every observation requires `detail` and `basis`: `output`, `source_comparison`, or `expectation`. A source comparison also requires `comparison: {reference, detail}`, with the correct content in `comparison.detail`. Use expectations for gaps that have not been verified against a source.
 
 Task, assessment, and observation detail each require 10-2000 characters. Use only evidence already available. Do not ask the user to complete an interview, investigate further, guess missing content, or diagnose causes merely to submit feedback. An empty result set can support a missing-information observation if the response includes an eligible job reference.
 
