@@ -486,7 +486,6 @@ export function createAlexandriaCommand(): Command {
       handleList(path, {
         ...options,
         category: path.length > 0,
-        contracts: true,
       })
   );
   return new Command('alexandria')

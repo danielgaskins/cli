@@ -31,8 +31,7 @@ it.each(
         capability: 'find-tools',
         options: {
           categories: [category],
-          level: 'tools',
-          expand: ['options', 'response', 'examples'],
+          level: 'providers',
           limit: 20,
         },
       },
@@ -50,6 +49,69 @@ it('preserves explicit provider browsing', async () => {
         provider: 'firecrawl',
         capability: 'find-tools',
         options: { providers: ['benzinga'], level: 'tools', limit: 20 },
+      },
+    ],
+    expect.anything()
+  );
+});
+
+it('lists compact provider tools before expanding a selected contract', async () => {
+  const run = (path: string[]) =>
+    new Command()
+      .addCommand(createAlexandriaCommand())
+      .parseAsync(['alexandria', ...path, '--json'], { from: 'user' });
+  await run(['people', 'fullenrich']);
+  expect(requestAlexandria).toHaveBeenLastCalledWith(
+    [
+      {
+        provider: 'firecrawl',
+        capability: 'find-tools',
+        options: {
+          categories: ['people'],
+          providers: ['fullenrich'],
+          level: 'tools',
+          limit: 20,
+        },
+      },
+    ],
+    expect.anything()
+  );
+  await run(['people', 'fullenrich', 'people/search']);
+  expect(requestAlexandria).toHaveBeenLastCalledWith(
+    [
+      {
+        provider: 'firecrawl',
+        capability: 'find-tools',
+        options: {
+          categories: ['people'],
+          providers: ['fullenrich'],
+          capabilities: ['people/search'],
+          level: 'tools',
+          expand: ['options', 'response', 'examples'],
+          limit: 20,
+        },
+      },
+    ],
+    expect.anything()
+  );
+});
+it('expands category contracts only when requested', async () => {
+  await new Command()
+    .addCommand(createAlexandriaCommand())
+    .parseAsync(['alexandria', 'people', '--contracts', '--json'], {
+      from: 'user',
+    });
+  expect(requestAlexandria).toHaveBeenLastCalledWith(
+    [
+      {
+        provider: 'firecrawl',
+        capability: 'find-tools',
+        options: {
+          categories: ['people'],
+          level: 'tools',
+          expand: ['options', 'response', 'examples'],
+          limit: 20,
+        },
       },
     ],
     expect.anything()
