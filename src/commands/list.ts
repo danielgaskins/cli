@@ -13,6 +13,7 @@ import { getApiKey, getConfig } from '../utils/config';
 type Selectors = Record<string, unknown>;
 type ListOptions = AlexandriaOptions & {
   category?: boolean;
+  contracts?: boolean;
   limit?: number;
   request?: string;
   providers?: boolean;
@@ -161,7 +162,7 @@ function renderCategories(items: Category[]): string {
     '  Browse a category below, or jump directly to a provider.',
     '',
     'Calling it',
-    '  Browse:  firecrawl alexandria list <category> --category',
+    '  Browse:  firecrawl alexandria <category>',
     '  Tools:   firecrawl alexandria list <provider>',
     '  Inspect: firecrawl alexandria list <provider> <capability>',
     "  Execute: firecrawl scrape --alexandria <provider>/<capability> --options '<input JSON>'",
@@ -359,6 +360,14 @@ export async function handleList(
       if (options.request)
         return fetchPage(parseFindToolsRequest(options.request).options);
       if (!path.length) return fetchPage({ level: 'providers', limit });
+      if (options.contracts && options.category && path.length === 1) {
+        return fetchPage({
+          categories: [categoryId(path[0])],
+          level: 'tools',
+          expand: ['options', 'response', 'examples'],
+          limit,
+        });
+      }
       let scope: Selectors = { providers: [path[0]] };
       let remaining = path.slice(1);
       let result = options.category
@@ -428,9 +437,10 @@ export async function handleList(
   }
 }
 
-export function createListCommand(): Command {
-  return new Command('list')
-    .alias('list-tools')
+export function createListCommand(name = 'list'): Command {
+  const command = new Command(name);
+  if (name === 'list') command.alias('list-tools');
+  return command
     .description(
       'Start with the Alexandria category index, then browse providers and tool contracts; discovery only'
     )
@@ -442,6 +452,7 @@ export function createListCommand(): Command {
       '--category',
       'Treat the first ID as a category when a provider has the same ID'
     )
+    .option('--contracts', 'Include full tool contracts for a category')
     .option('--providers', 'List all providers instead of the category index')
     .option(
       '--limit <number>',
@@ -467,4 +478,21 @@ export function createListCommand(): Command {
       '\nExamples:\n  firecrawl alexandria list\n  firecrawl list --providers\n  firecrawl list finance\n  firecrawl list benzinga\n  firecrawl list benzinga <capability> --json\n\nProvider IDs take precedence over categories.\nNo listed tool is executed. Search by task with firecrawl search --sources alexandria.\n'
     )
     .action(handleList);
+}
+
+export function createAlexandriaCommand(): Command {
+  const browse = createListCommand('browse').action(
+    (path: string[], options: ListOptions) =>
+      handleList(path, {
+        ...options,
+        category: path.length > 0,
+        contracts: true,
+      })
+  );
+  return new Command('alexandria')
+    .description(
+      'Browse categories with alexandria <category>, or inspect providers with alexandria list'
+    )
+    .addCommand(createListCommand())
+    .addCommand(browse, { isDefault: true, hidden: true });
 }
