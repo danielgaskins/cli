@@ -652,6 +652,103 @@ describe('executeSearch', () => {
     });
   });
 
+  describe('output receipts', () => {
+    let stderr: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      stderr.mockRestore();
+    });
+
+    it.each([{ json: true }, { pretty: true }])(
+      'preserves empty results and receipts in JSON output with %o',
+      async (flags) => {
+        mockHttpPost.mockResolvedValue(
+          mockSearchResponse(
+            { web: [] },
+            {
+              id: 'search-empty',
+              creditsUsed: 2,
+              warning: 'Partial upstream response',
+            }
+          )
+        );
+
+        await handleSearchCommand({
+          query: 'empty',
+          output: 'results.json',
+          ...flags,
+        });
+
+        expect(writeOutput).toHaveBeenCalledWith(
+          expect.any(String),
+          'results.json',
+          true
+        );
+        const body = JSON.parse(vi.mocked(writeOutput).mock.calls[0][0]);
+        expect(body).toEqual({
+          success: true,
+          data: { web: [] },
+          id: 'search-empty',
+          creditsUsed: 2,
+          warning: 'Partial upstream response',
+        });
+        expect(stderr).toHaveBeenCalledWith('Search ID: search-empty');
+        expect(stderr).toHaveBeenCalledWith('Credits: 2');
+      }
+    );
+
+    it('honors readable output files for empty results', async () => {
+      mockHttpPost.mockResolvedValue(mockSearchResponse({}));
+      await handleSearchCommand({ query: 'empty', output: 'results.txt' });
+      expect(writeOutput).toHaveBeenCalledWith(
+        'No results found.',
+        'results.txt',
+        true
+      );
+      expect(stderr).not.toHaveBeenCalled();
+    });
+
+    it('prints zero-credit receipts without relabeling search IDs as retry keys', async () => {
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse(
+          { tools: [] },
+          {
+            id: 'search-free',
+            creditsUsed: 0,
+          }
+        )
+      );
+      await handleSearchCommand({ query: 'tools', json: true });
+      expect(stderr).toHaveBeenCalledWith('Credits: 0');
+      const body = JSON.parse(vi.mocked(writeOutput).mock.calls[0][0]);
+      expect(body.id).toBe('search-free');
+      expect(body).not.toHaveProperty('requestId');
+    });
+
+    it('prints receipts for nonempty readable results without mixing them into content', async () => {
+      mockHttpPost.mockResolvedValue(
+        mockSearchResponse(
+          { web: [{ url: 'https://example.com', title: 'Example' }] },
+          {
+            id: 'search-readable',
+            creditsUsed: 2,
+          }
+        )
+      );
+      await handleSearchCommand({ query: 'example' });
+      expect(stderr).toHaveBeenCalledWith('Search ID: search-readable');
+      expect(stderr).toHaveBeenCalledWith('Credits: 2');
+      const content = vi.mocked(writeOutput).mock.calls[0][0];
+      expect(content).toContain('Example');
+      expect(content).not.toContain('Search ID:');
+      expect(content).not.toContain('Credits:');
+    });
+  });
+
   describe('Time-based search parameters', () => {
     it('should support qdr:h for past hour', async () => {
       mockHttpPost.mockResolvedValue(mockSearchResponse({ web: [] }));

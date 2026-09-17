@@ -328,6 +328,13 @@ export async function handleSearchCommand(
     return;
   }
 
+  if (result.id) {
+    console.error(`Search ID: ${result.id}`);
+  }
+  if (typeof result.creditsUsed === 'number') {
+    console.error(`Credits: ${result.creditsUsed}`);
+  }
+
   // Check if there are any results
   const hasResults =
     (result.data.tools && result.data.tools.length > 0) ||
@@ -335,11 +342,6 @@ export async function handleSearchCommand(
     (result.data.images && result.data.images.length > 0) ||
     (result.data.news && result.data.news.length > 0) ||
     (result.data.developer && result.data.developer.length > 0);
-
-  if (!hasResults && !(result.data.tools && (options.json || options.pretty))) {
-    console.log('No results found.');
-    return;
-  }
 
   let outputContent: string;
 
@@ -366,7 +368,9 @@ export async function handleSearchCommand(
       : JSON.stringify(jsonOutput);
   } else {
     // Default to human-readable format
-    outputContent = formatSearchReadable(result.data, options);
+    outputContent = hasResults
+      ? formatSearchReadable(result.data, options)
+      : 'No results found.';
   }
 
   writeOutput(outputContent, options.output, !!options.output);
