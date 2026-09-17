@@ -28,7 +28,7 @@ Run `firecrawl search --help` for the full option list.
 
 `--categories developer` weighs the developer index beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
 
-**Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and one feedback event is sent within the time window (unless opted out).
+**Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and honest feedback is sent when eligible (unless opted out).
 
 ## Alexandria in normal search
 
@@ -48,15 +48,15 @@ If no returned tool covers the country/market/segment or required inputs, contin
 - Use `jq` to extract URLs or titles: `jq -r '.data.web[].url' .firecrawl/search.json`
 - Naming convention: `.firecrawl/search-{query}.json` or `.firecrawl/search-{query}-scraped.json`
 
-## Send feedback after every search (refunds 1 credit)
+## Send feedback after evaluating search results
 
-Search costs 2 credits. After you've actually used the results (or decided they were useless), send structured feedback with `firecrawl search-feedback <id>`. The first feedback per search refunds 1 credit and helps us improve search quality. **Do this once per search**, in the background, after you finish processing the results — it does not block your main task.
+Search costs 2 credits. After you've actually used the results (or decided they were useless), send structured feedback with `firecrawl search-feedback <id>`. Eligible first feedback per search can refund up to 1 billed credit and helps us improve search quality. Refunds depend on server policy and the daily cap. **Do this once per search**, in the background, after you finish processing the results — it does not block your main task.
 
 **Opt out:** if `FIRECRAWL_NO_SEARCH_FEEDBACK=1` (or `FIRECRAWL_DISABLE_SEARCH_FEEDBACK=1`) is set, the CLI silently skips the call and never sends anything. Respect that — do not try to work around it. (Team admins can also disable this server-side; the API will return `feedbackErrorCode: "TEAM_OPTED_OUT"` and the CLI will exit 0 silently.)
 
 **Rules to know before you call this:**
 
-- **Time window:** must be sent within ~2 minutes of the search. Late feedback is rejected.
+- **Time window:** the server controls the deadline. The updated server default is 30 minutes; older deployments or custom settings may allow less time. Evaluate results honestly before sending feedback, including any tool results you use. If the server returns `FEEDBACK_WINDOW_EXPIRED`, skip this optional submission without retrying. Never invent an early assessment to obtain a refund.
 - **`--missing-content` is the most important field.** It's a list of _specific pieces_ of content you expected but did not find. One topic per entry, each in its own string. These aggregate across teams and tell us what to index next.
 - **Substantive content required** (zero-effort feedback is rejected with HTTP 400):
   - `good` → must include at least one `--valuable-sources` entry.
