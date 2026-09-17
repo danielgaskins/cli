@@ -42,6 +42,8 @@ Run `firecrawl search --help` for the full option list.
 
 Choose the feedback contract that matches the search job's authentication. A returned `metadata.feedback` invitation identifies the keyless submission endpoint and job ID. Do not send the keyless fields to the authenticated Search feedback route, or add credentials to submit feedback for a keyless job.
 
+Keyless feedback is available for successful and failed jobs when the response includes a job reference. For an explicitly failed job, use observation `kind: "failure"` and `reason: "timeout"`, `"transport_error"`, `"proxy_error"`, or `"other"`; report only the error already returned. Keep the submission under 8 KiB including server defaults. Run `firecrawl feedback --help` for reason definitions and the complete contract. The server invitation states the daily allowance, shared per caller IP.
+
 ### Keyless Search
 
 Use `firecrawl feedback search <jobId>` with `--rating`, `--task`, `--assessment`, and `--observations-file`. The task describes what the search needed to answer; the assessment describes how well it answered that task. Supply 1-20 observations:
