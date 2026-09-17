@@ -210,7 +210,7 @@ When using a custom API URL (anything other than `https://api.firecrawl.dev`), a
 
 ### `scrape` - Scrape URLs
 
-Extract content from any webpage. A single URL writes to stdout unless `-o` is supplied. Pass multiple URLs to scrape them concurrently; without output flags, successful results are saved to `.firecrawl/`, while failed URLs are reported on stderr without per-URL files. With `--json` or `-o <path>`, results form one JSON array in input order, written to stdout or the requested file. Each item contains `url`, `success`, and the full `data` (including metadata) or an `error`. `--pretty` indents the array. Any failed URL makes the command exit nonzero, after successful results and errors have been saved.
+Extract content from any webpage. Pass multiple URLs to scrape them concurrently -- each result is saved to `.firecrawl/` automatically.
 
 ```bash
 # Basic usage (outputs markdown)
@@ -234,30 +234,29 @@ firecrawl scrape https://firecrawl.dev https://firecrawl.dev/blog https://docs.f
 
 #### Scrape Options
 
-| Option                     | Description                                                  |
-| -------------------------- | ------------------------------------------------------------ |
-| `-f, --format <formats>`   | Output format(s), comma-separated                            |
-| `-H, --html`               | Shortcut for `--format html`                                 |
-| `-S, --summary`            | Shortcut for `--format summary`                              |
-| `--only-main-content`      | Extract only main content (removes navs, footers, etc.)      |
-| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)          |
-| `--timeout <ms>`           | Request timeout in milliseconds                              |
-| `--screenshot`             | Take a screenshot                                            |
-| `--full-page-screenshot`   | Take a full page screenshot                                  |
-| `--include-tags <tags>`    | Only include specific HTML tags                              |
-| `--exclude-tags <tags>`    | Exclude specific HTML tags                                   |
-| `--max-age <milliseconds>` | Maximum cached-content age; use `0` to request fresh content |
-| `--lockdown`               | Enable lockdown mode for the scrape                          |
-| `--redact-pii`             | Redact personally identifiable information from output       |
-| `--schema <json>`          | JSON schema for structured extraction                        |
-| `--schema-file <path>`     | Path to JSON schema file for structured extraction           |
-| `--actions <json>`         | JSON actions array to run during scrape                      |
-| `--actions-file <path>`    | Path to JSON actions file                                    |
-| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)       |
-| `-o, --output <path>`      | Save output to file                                          |
-| `--json`                   | Output as JSON format                                        |
-| `--pretty`                 | Pretty print JSON output                                     |
-| `--timing`                 | Show request timing info                                     |
+| Option                     | Description                                             |
+| -------------------------- | ------------------------------------------------------- |
+| `-f, --format <formats>`   | Output format(s), comma-separated                       |
+| `-H, --html`               | Shortcut for `--format html`                            |
+| `-S, --summary`            | Shortcut for `--format summary`                         |
+| `--only-main-content`      | Extract only main content (removes navs, footers, etc.) |
+| `--wait-for <ms>`          | Wait time before scraping (for JS-rendered content)     |
+| `--screenshot`             | Take a screenshot                                       |
+| `--full-page-screenshot`   | Take a full page screenshot                             |
+| `--include-tags <tags>`    | Only include specific HTML tags                         |
+| `--exclude-tags <tags>`    | Exclude specific HTML tags                              |
+| `--max-age <milliseconds>` | Maximum age of cached content in milliseconds           |
+| `--lockdown`               | Enable lockdown mode for the scrape                     |
+| `--redact-pii`             | Redact personally identifiable information from output  |
+| `--schema <json>`          | JSON schema for structured extraction                   |
+| `--schema-file <path>`     | Path to JSON schema file for structured extraction      |
+| `--actions <json>`         | JSON actions array to run during scrape                 |
+| `--actions-file <path>`    | Path to JSON actions file                               |
+| `--proxy <proxy>`          | Proxy mode for scraping (for example, `auto`, `basic`)  |
+| `-o, --output <path>`      | Save output to file                                     |
+| `--json`                   | Output as JSON format                                   |
+| `--pretty`                 | Pretty print JSON output                                |
+| `--timing`                 | Show request timing info                                |
 
 #### Available Formats
 
@@ -346,8 +345,6 @@ firecrawl search "API documentation" --scrape --scrape-formats markdown,links
 firecrawl search "AI data tools"
 ```
 
-Search prints the returned Search ID and credit usage to stderr when available, keeping stdout suitable for piping. `--json` and `--pretty` preserve the response metadata even when no results match; `-o` also saves empty results.
-
 #### Search Options
 
 | Option                       | Description                                                                                                                                                               |
@@ -367,7 +364,6 @@ Search prints the returned Search ID and credit usage to stderr when available, 
 | `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                   |
 | `-o, --output <path>`        | Save to file                                                                                                                                                              |
 | `--json`                     | Output as compact JSON                                                                                                                                                    |
-| `--pretty`                   | Output as pretty-printed JSON                                                                                                                                             |
 
 #### Examples
 
@@ -918,22 +914,6 @@ firecrawl https://example.com -o output.md
 firecrawl https://example.com --format links --pretty
 ```
 
-### Receipts, failures, and retries
-
-Search, URL scrape, and Alexandria JSON output add a root `receipt` while preserving existing response fields; multi-URL JSON has a `receipt` on each result item. Raw text output stays unchanged. Available receipt fields are:
-
-- `creditsUsed`: actual credits reported by the response, including zero; absent means unknown, not free. A tool's catalog price is not a charge receipt.
-- `requestId`: client idempotency ID for Alexandria calls.
-- `operationId` and `operationType` (`search` or `scrape`): the returned server operation ID and its kind, for tracing the operation.
-
-These identifiers serve different purposes. `--request-id` controls Alexandria retry identity; it is not supported for ordinary URL scrape. Diagnostics print available IDs, credits, and retry timing to stderr. Keep stderr separate from JSON stdout; `2>&1` combines them and is not parseable JSON.
-
-With `--json` or `-o`, failed search/scrape calls write structured error output before exiting nonzero. A single scrape failure writes JSON even when the requested filename ends in `.md`. Multi-URL explicit output preserves successful results and failures in input order. Inspect the exit code and error fields before treating a saved file as usable content. Missing receipt fields do not establish whether a timed-out operation was billed.
-
-On a rate limit, wait at least the returned retry delay when available; otherwise use bounded exponential backoff. API keys on the same team share limits, which vary by plan and endpoint. For an unresolved Alexandria request, retain its request ID to recover the same operation. A completed failure can be replayed under the same ID; a deliberately new attempt needs a new ID and may incur a new charge. Do not automatically rotate IDs to bypass a failure.
-
-For URL scrape, `--timeout <milliseconds>` sets the server-side scrape timeout (the SDK allows transport overhead) and `--max-age 0` requests fresh content. Freshness does not guarantee the source returns a successful page, and a timeout is not proof that upstream work stopped. Inspect returned status/error metadata as well as content.
-
 ### Format Behavior
 
 - **Single format**: Outputs raw content (markdown text, HTML, etc.)
@@ -1059,3 +1039,9 @@ https://www.firecrawl.dev/app/settings?tab=data-sources. Never infer consent fro
 failed lookup or automatically retry an acceptance. The API remains authoritative
 for organization access and acceptance authority.
 After confirmed success, rerun the original provider command; its normal credits apply.
+
+### Alexandria receipts and retries
+
+Alexandria execution JSON includes an additive `receipt`: `creditsUsed` is actual reported usage (missing means unknown), `requestId` is the client idempotency identity, and `operationId`/`operationType` identify the server scrape. Existing response fields remain available. IDs, reported credits, and available retry delays print to stderr.
+
+Use the same request ID to recover pending or uncertain execution. Completed results, including failures, replay under the same ID; a deliberate new execution needs a new ID and may charge again. Never automatically rotate an uncertain ID. Structured failures preserve available status, code, action and retry metadata.

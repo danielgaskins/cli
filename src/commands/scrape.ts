@@ -1,5 +1,3 @@
-import { apiFailure } from './alexandria';
-import { receiptFor, printReceipt, printRetry } from '../utils/receipt';
 /**
  * Scrape command implementation
  */
@@ -117,13 +115,6 @@ export async function executeScrape(
     scrapeParams.maxAge = options.maxAge;
   }
 
-  if (options.timeout !== undefined) {
-    if (!Number.isSafeInteger(options.timeout) || options.timeout <= 0)
-      throw new Error('--timeout must be a positive integer in milliseconds.');
-    scrapeParams.timeout = options.timeout;
-    scrapeParams.autoResume = false;
-  }
-
   if (options.maxPages !== undefined) {
     scrapeParams.parsers = [{ type: 'pdf', maxPages: options.maxPages }];
   }
@@ -164,10 +155,9 @@ export async function executeScrape(
     if (isKeylessMode(options.apiKey, options.apiUrl)) {
       // Keyless free tier: header-less request. The API identifies the CLI via
       // the `integration: 'cli'` field already in scrapeParams.
-      const { autoResume: _autoResume, ...wireParams } = scrapeParams;
       const json = await keylessRequest('/v2/scrape', {
         url: options.url,
-        ...wireParams,
+        ...scrapeParams,
       });
       result = json?.data ?? json;
     } else {
@@ -180,14 +170,9 @@ export async function executeScrape(
     const requestEndTime = Date.now();
     outputTiming(options, requestStartTime, requestEndTime);
 
-    const receipt = receiptFor(result, 'scrape');
-    printReceipt(receipt);
-    if (typeof result?.metadata?.cacheState === 'string')
-      console.error(`Cache: ${result.metadata.cacheState}`);
-    if (typeof result?.metadata?.cachedAt === 'string')
-      console.error(`Cached at: ${result.metadata.cachedAt}`);
     const scrapeId = result?.metadata?.scrapeId;
     if (scrapeId) {
+      process.stderr.write(`Scrape ID: ${scrapeId}\n`);
       try {
         saveInteractSession({
           scrapeId,
@@ -205,17 +190,15 @@ export async function executeScrape(
     return {
       success: true,
       data: result,
-      receipt,
     };
   } catch (error) {
     const requestEndTime = Date.now();
     outputTiming(options, requestStartTime, requestEndTime, error);
 
-    const failure = apiFailure(error);
-    const receipt = receiptFor(failure, 'scrape');
-    printReceipt(receipt);
-    printRetry(failure);
-    return { ...failure, success: false, receipt };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
   }
 }
 
@@ -228,14 +211,7 @@ export async function handleScrapeCommand(
   const result = await executeScrape(options);
 
   // Query mode: output answer directly
-  if (
-    options.query &&
-    !options.json &&
-    !options.pretty &&
-    !options.output?.endsWith('.json') &&
-    result.success &&
-    result.data?.answer
-  ) {
+  if (options.query && result.success && result.data?.answer) {
     writeOutput(result.data.answer, options.output, !!options.output);
     return;
   }
@@ -278,7 +254,8 @@ function urlToFilename(url: string): string {
 }
 
 /**
- * Explicit output produces an ordered JSON collection; otherwise save per URL.
+ * Handle scrape for multiple URLs.
+ * Each result is saved as a separate file in .firecrawl/
  */
 export async function handleMultiScrapeCommand(
   urls: string[],
@@ -286,9 +263,9 @@ export async function handleMultiScrapeCommand(
 ): Promise<void> {
   const fs = await import('fs');
   const path = await import('path');
-  const structuredOutput = !!options.output || !!options.json;
+
   const dir = '.firecrawl';
-  if (!structuredOutput && !fs.existsSync(dir)) {
+  if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
@@ -299,7 +276,9 @@ export async function handleMultiScrapeCommand(
   process.stderr.write(`Scraping ${total} URLs...\n`);
 
   const promises = urls.map(async (url) => {
-    const result = await executeScrape({ ...options, url });
+    const scrapeOptions: ScrapeOptions = { ...options, url };
+    const result = await executeScrape(scrapeOptions);
+
     const currentCount = ++completedCount;
 
     if (!result.success) {
@@ -307,41 +286,33 @@ export async function handleMultiScrapeCommand(
       process.stderr.write(
         `[${currentCount}/${total}] Error: ${url} - ${result.error}\n`
       );
-    } else if (structuredOutput) {
-      process.stderr.write(`[${currentCount}/${total}] Scraped: ${url}\n`);
-    } else {
-      const filename = urlToFilename(url);
-      const filepath = path.join(dir, filename);
-      const content = result.data?.markdown || JSON.stringify(result.data);
-      fs.writeFileSync(filepath, content, 'utf-8');
-      process.stderr.write(`[${currentCount}/${total}] Saved: ${filepath}\n`);
+      return;
     }
 
-    // Avoid retaining every document in memory for the default per-file mode.
-    return structuredOutput ? { url, ...result } : undefined;
+    const filename = urlToFilename(url);
+    const filepath = path.join(dir, filename);
+    const content = result.data?.markdown || JSON.stringify(result.data);
+    fs.writeFileSync(filepath, content, 'utf-8');
+
+    process.stderr.write(`[${currentCount}/${total}] Saved: ${filepath}\n`);
   });
 
-  const results = await Promise.all(promises);
+  await Promise.all(promises);
+
   clearInteractSession();
-
-  if (structuredOutput) {
-    writeOutput(
-      JSON.stringify(results, null, options.pretty ? 2 : undefined),
-      options.output,
-      !!options.output
-    );
-  }
-
   process.stderr.write(
     `\nCompleted: ${completedCount - errorCount}/${total} succeeded`
   );
   if (errorCount > 0) {
     process.stderr.write(`, ${errorCount} failed`);
-    process.exitCode = 1;
   }
   process.stderr.write(
     '\nTip: Use --scrape-id <id> with interact to target a specific scrape.\n'
   );
+
+  if (errorCount === total) {
+    process.exit(1);
+  }
 }
 
 /**

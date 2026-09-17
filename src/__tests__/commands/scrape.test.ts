@@ -432,7 +432,6 @@ describe('executeScrape', () => {
       expect(result).toEqual({
         success: true,
         data: mockResponse,
-        receipt: {},
       });
     });
 
@@ -467,7 +466,6 @@ describe('executeScrape', () => {
       expect(result).toEqual({
         success: false,
         error: errorMessage,
-        receipt: {},
       });
     });
 
@@ -479,7 +477,7 @@ describe('executeScrape', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Request failed');
+      expect(result.error).toBe('Unknown error occurred');
     });
   });
 

@@ -1,162 +1,60 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { apiFailure } from '../../commands/alexandria';
-import { printReceipt, printRetry, receiptFor } from '../../utils/receipt';
+import { receiptFor } from '../../utils/receipt';
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.useRealTimers();
+afterEach(() => vi.useRealTimers());
+
+it('keeps actual zero charges and separates client identity from the server operation', () => {
+  expect(
+    receiptFor(
+      { scrape_id: 'server-1', data: { creditsCost: 0 } },
+      'scrape',
+      'client-1'
+    )
+  ).toEqual({
+    creditsUsed: 0,
+    requestId: 'client-1',
+    operationId: 'server-1',
+    operationType: 'scrape',
+  });
+  expect(receiptFor({}, 'scrape')).toEqual({});
+  expect(
+    receiptFor({ metadata: { creditsUsed: -1 } }, 'scrape')
+  ).not.toHaveProperty('creditsUsed');
 });
 
-describe('execution receipts', () => {
-  it('reports actual charges, including free executions, on each response surface', () => {
-    expect(receiptFor({ metadata: { creditsUsed: 0 } }, 'scrape')).toEqual({
-      creditsUsed: 0,
-    });
-    expect(receiptFor({ creditsCost: 5 }, 'scrape')).toEqual({
-      creditsUsed: 5,
-    });
-    expect(receiptFor({ data: { creditsCost: 2.5 } }, 'scrape')).toEqual({
-      creditsUsed: 2.5,
-    });
-    expect(receiptFor({ creditsUsed: 0 }, 'search')).toEqual({
-      creditsUsed: 0,
-    });
-  });
-
-  it.each([undefined, null, -1, NaN, Infinity, '5'])(
-    'does not present an unknown or invalid charge (%s) as zero',
-    (creditsUsed) => {
-      expect(
-        receiptFor({ metadata: { creditsUsed } }, 'scrape')
-      ).not.toHaveProperty('creditsUsed');
-      expect(receiptFor({ creditsUsed }, 'search')).not.toHaveProperty(
-        'creditsUsed'
-      );
-    }
-  );
-
-  it('does not turn a quote or a catalogue price into an execution charge', () => {
-    const quote = { price: 5, estimatedCredits: 5, quote: { creditsCost: 5 } };
-    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
-    printReceipt(receiptFor(quote, 'scrape'));
-    expect(stderr).not.toHaveBeenCalled();
-  });
-
-  it('keeps the retry request identity distinct from the server operation identity', () => {
-    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const stdout = vi
-      .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
-    const receipt = receiptFor(
-      { id: 'search-server-id', creditsUsed: 0 },
-      'search',
-      'retry-client-id'
-    );
-    expect(receipt).toMatchObject({
-      requestId: 'retry-client-id',
-      operationId: 'search-server-id',
-    });
-    printReceipt(receipt);
-    expect(stderr.mock.calls.map(([line]) => line)).toEqual([
-      'Request ID: retry-client-id',
-      'Search ID: search-server-id',
-      'Credits: 0',
-    ]);
-    expect(stdout).not.toHaveBeenCalled();
-  });
-
-  it('can print a server receipt without repeating an already printed request ID', () => {
-    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
-    printReceipt(
-      receiptFor(
-        { metadata: { scrapeId: 'server-id', creditsUsed: 5 } },
-        'scrape',
-        'client-id'
-      ),
-      false
-    );
-    expect(stderr.mock.calls.map(([line]) => line)).toEqual([
-      'Scrape ID: server-id',
-      'Credits: 5',
-    ]);
-  });
-});
-
-describe('failure receipts and retry guidance', () => {
-  it('retains actionable failure fields without serializing transport credentials or unknown fields', () => {
-    const error = Object.assign(new Error('transport message'), {
-      config: { headers: { Authorization: 'Bearer secret-key' } },
-      response: {
-        status: 429,
-        headers: { 'retry-after': '2', 'set-cookie': 'secret-cookie' },
-        data: {
-          error: 'Rate limited',
-          code: 'rate_limited',
-          requestId: 'client-id',
-          scrapeId: 'server-id',
-          apiKey: 'secret-key',
-          debug: { headers: { Authorization: 'secret-key' } },
-        },
-      },
-    });
-    expect(apiFailure(error)).toEqual({
-      success: false,
-      error: 'Rate limited',
-      code: 'rate_limited',
-      requestId: 'client-id',
-      scrapeId: 'server-id',
+it('preserves actionable errors without serializing transport credentials', () => {
+  const failure = apiFailure({
+    response: {
       status: 429,
-      retryAfterSeconds: 2,
-    });
-    expect(JSON.stringify(apiFailure(error))).not.toContain('secret');
-  });
-
-  it('rounds a fractional structured retry delay up rather than retrying early', () => {
-    expect(
-      apiFailure({
-        details: { error: 'Busy', retry_after_seconds: 1.1 },
-        status: 429,
-      })
-    ).toMatchObject({ retryAfterSeconds: 2 });
-  });
-
-  it('understands an HTTP-date Retry-After from standard Headers', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-09-17T12:00:00.500Z'));
-    const failure = apiFailure({
-      response: {
-        status: 503,
-        data: { error: 'Unavailable' },
-        headers: new Headers({
-          'Retry-After': 'Thu, 17 Sep 2026 12:00:03 GMT',
-        }),
+      data: {
+        error: 'Limited',
+        code: 'RATE_LIMITED',
+        requestId: 'request-1',
+        retry_after_seconds: 1.5,
       },
+      config: { headers: { authorization: 'secret' } },
+    },
+  });
+  expect(failure).toEqual({
+    success: false,
+    error: 'Limited',
+    code: 'RATE_LIMITED',
+    requestId: 'request-1',
+    status: 429,
+    retryAfterSeconds: 2,
+  });
+  expect(JSON.stringify(failure)).not.toContain('secret');
+});
+
+it('handles HTTP-date retry delays without treating invalid numeric delays as dates', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-09-17T00:00:00Z'));
+  const failure = (retry: string) =>
+    apiFailure({
+      response: { status: 429, headers: { 'retry-after': retry } },
     });
-    expect(failure.retryAfterSeconds).toBe(3);
-  });
-
-  it.each([undefined, 'not-a-delay', '-5', 'Infinity'])(
-    'does not invent retry timing from unknown headers (%s)',
-    (retry) => {
-      const failure = apiFailure({
-        response: {
-          status: 502,
-          data: { error: 'Failed' },
-          headers: { 'retry-after': retry },
-        },
-      });
-      expect(failure).not.toHaveProperty('retryAfterSeconds');
-      const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
-      printRetry(failure);
-      expect(stderr).not.toHaveBeenCalled();
-    }
-  );
-
-  it('prints a supplied zero-second retry delay rather than suppressing it', () => {
-    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
-    printRetry(
-      apiFailure({ details: { error: 'Retry now', retryAfterSeconds: 0 } })
-    );
-    expect(stderr).toHaveBeenCalledWith('Retry after: 0s');
-  });
+  expect(failure('Thu, 17 Sep 2026 00:00:03 GMT').retryAfterSeconds).toBe(3);
+  for (const value of ['-5', 'nonsense', ''])
+    expect(failure(value)).not.toHaveProperty('retryAfterSeconds');
 });

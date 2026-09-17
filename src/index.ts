@@ -71,11 +71,7 @@ import { handleEnvPullCommand } from './commands/env';
 import { handleStatusCommand } from './commands/status';
 import { handleDoctorCommand } from './commands/doctor';
 import { isUrl, normalizeUrl } from './utils/url';
-import {
-  parseMaxPages,
-  parseScrapeOptions,
-  parseScrapeTimeout,
-} from './utils/options';
+import { parseMaxPages, parseScrapeOptions } from './utils/options';
 import { isJobId } from './utils/job';
 import { ensureAuthenticated, printBanner } from './utils/auth';
 import { maybeShowUpdateNotice } from './utils/update-notice';
@@ -360,7 +356,7 @@ program
 function createScrapeCommand(): Command {
   const scrapeCmd = new Command('scrape')
     .description(
-      'Scrape one or more URLs. Multiple URLs save to .firecrawl/ by default; --json or -o produces an ordered JSON array.'
+      'Scrape one or more URLs. Multiple URLs are scraped concurrently and saved to .firecrawl/'
     )
     .argument('[urls...]', 'URL(s) to scrape')
     .option(
@@ -376,11 +372,6 @@ function createScrapeCommand(): Command {
       '--max-pages <number>',
       'Maximum PDF pages to parse (1-10000). PDFs cost 1 credit per parsed page; extra options may cost more.',
       parseMaxPages
-    )
-    .option(
-      '--timeout <ms>',
-      'Server-side scrape timeout in milliseconds',
-      parseScrapeTimeout
     )
     .option('--only-main-content', 'Include only main content', false)
     .option(
@@ -1009,8 +1000,12 @@ function createSearchCommand(): Command {
     )
     .option('--api-url <url>', 'API URL (overrides global --api-url)')
     .option('-o, --output <path>', 'Output file path (default: stdout)')
+    // .option(
+    //   '-p, --pretty',
+    //   'Output as pretty JSON (default: human-readable)',
+    //   false
+    // )
     .option('--json', 'Output as compact JSON', false)
-    .option('--pretty', 'Output as pretty-printed JSON', false)
     .action(async (query, options) => {
       // Parse sources
       let sources: SearchSource[] = ['web', 'alexandria'];

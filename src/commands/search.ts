@@ -1,4 +1,3 @@
-import { receiptFor, printReceipt, printRetry } from '../utils/receipt';
 /**
  * Search command implementation
  */
@@ -142,14 +141,16 @@ export async function executeSearch(
       warning: envelope.warning,
       id: envelope.id,
       creditsUsed: envelope.creditsUsed,
-      receipt: receiptFor(envelope, 'search'),
     };
   } catch (error) {
-    const failure = apiFailure(error);
     return {
-      ...failure,
       success: false,
-      receipt: receiptFor(failure, 'search'),
+      error:
+        options.domainTools || options.sources?.includes('alexandria')
+          ? JSON.stringify(apiFailure(error))
+          : error instanceof Error
+            ? error.message
+            : 'Unknown error occurred',
     };
   }
 }
@@ -318,18 +319,9 @@ export async function handleSearchCommand(
 ): Promise<void> {
   const result = await executeSearch(options);
 
-  printReceipt(result.receipt ?? {});
-  printRetry(result as unknown as Record<string, unknown>);
   if (!result.success) {
     console.error('Error:', result.error);
-    if (options.json || options.pretty || options.output)
-      writeOutput(
-        JSON.stringify(result, null, options.pretty ? 2 : undefined),
-        options.output,
-        !!options.output
-      );
-    process.exitCode = 1;
-    return;
+    process.exit(1);
   }
 
   if (!result.data) {
@@ -344,19 +336,19 @@ export async function handleSearchCommand(
     (result.data.news && result.data.news.length > 0) ||
     (result.data.developer && result.data.developer.length > 0);
 
+  if (!hasResults && !(result.data.tools && (options.json || options.pretty))) {
+    console.log('No results found.');
+    return;
+  }
+
   let outputContent: string;
 
   // Use JSON format if --json or --pretty flag is set
   // --pretty implies JSON output
-  if (
-    options.json ||
-    options.pretty ||
-    options.output?.toLowerCase().endsWith('.json')
-  ) {
+  if (options.json || options.pretty) {
     const jsonOutput: Record<string, any> = {
       success: true,
       data: result.data,
-      receipt: result.receipt,
     };
 
     if (result.warning) {
@@ -374,9 +366,7 @@ export async function handleSearchCommand(
       : JSON.stringify(jsonOutput);
   } else {
     // Default to human-readable format
-    outputContent = hasResults
-      ? formatSearchReadable(result.data, options)
-      : 'No results found.';
+    outputContent = formatSearchReadable(result.data, options);
   }
 
   writeOutput(outputContent, options.output, !!options.output);

@@ -107,9 +107,7 @@ describe('Output Utilities', () => {
       handleScrapeOutput({ success: false, error: 'API Error' }, ['markdown']);
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error:', 'API Error');
-      expect(processExitSpy).not.toHaveBeenCalled();
-      expect(process.exitCode).toBe(1);
-      process.exitCode = undefined;
+      expect(processExitSpy).toHaveBeenCalledWith(1);
     });
 
     it('should output raw markdown for single markdown format', () => {

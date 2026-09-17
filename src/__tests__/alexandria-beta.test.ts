@@ -400,14 +400,7 @@ it('preserves mixed search results, tools and billing metadata', async () => {
   };
   const result = await cli(['search', 'pizza hut', '--json']);
   expect(result.code).toBe(0);
-  expect(JSON.parse(result.stdout)).toEqual({
-    ...response,
-    receipt: {
-      creditsUsed: 2,
-      operationId: 'search-1',
-      operationType: 'search',
-    },
-  });
+  expect(JSON.parse(result.stdout)).toEqual(response);
   expect(requests[0]).toMatchObject({
     url: '/v2/search',
     headers: { authorization: 'Bearer fc-test' },
@@ -548,7 +541,7 @@ it('keeps URL scrape tool contracts in the output', async () => {
   };
   const result = await cli(['scrape', 'https://example.com', '--domain-tools']);
   expect(result.code).toBe(0);
-  expect(JSON.parse(result.stdout)).toEqual({ ...response.data, receipt: {} });
+  expect(JSON.parse(result.stdout)).toEqual(response.data);
   expect(requests[0]).toMatchObject({
     url: '/v2/scrape',
     body: { url: 'https://example.com', domainTools: true },
@@ -909,168 +902,5 @@ it('fails clearly on an unknown thread', async () => {
   expect(requests).toHaveLength(1);
   const malformed = await cli(['agent', 'thread', 'nope']);
   expect(malformed.code).toBe(1);
-  expect(requests).toHaveLength(1);
-});
-
-it('writes a structured plain-scrape refusal to the requested file before exiting', async () => {
-  status = 403;
-  response = {
-    success: false,
-    error: 'Access denied',
-    code: 'ACCESS_DENIED',
-    requestId: 'server-error-1',
-  };
-  const output = join(home, 'refusal.md');
-  const result = await cli([
-    'scrape',
-    'https://example.com',
-    '--json',
-    '-o',
-    output,
-  ]);
-  expect(result.code).toBe(1);
-  expect(result.stdout).toBe('');
-  expect(JSON.parse(readFileSync(output, 'utf8'))).toMatchObject({
-    success: false,
-    error: 'Access denied',
-    code: 'ACCESS_DENIED',
-    status: 403,
-    requestId: 'server-error-1',
-  });
-  expect(requests).toHaveLength(1);
-});
-
-it('preserves structured retry guidance in failed search JSON and stderr', async () => {
-  status = 429;
-  response = {
-    success: false,
-    error: 'Rate limited',
-    code: 'RATE_LIMITED',
-    retry_after_seconds: 2,
-  };
-  const result = await cli(['search', 'fixture', '--sources', 'web', '--json']);
-  expect(result.code).toBe(1);
-  expect(JSON.parse(result.stdout)).toMatchObject({
-    success: false,
-    status: 429,
-    code: 'RATE_LIMITED',
-    retryAfterSeconds: 2,
-  });
-  expect(result.stderr).toContain('Retry after: 2s');
-});
-
-it('keeps raw scrape stdout pipeable and reports returned cache and charges', async () => {
-  response = {
-    success: true,
-    data: {
-      markdown: 'fixture',
-      metadata: {
-        scrapeId: 'plain-1',
-        creditsUsed: 0,
-        cacheState: 'hit',
-        cachedAt: '2026-09-17T00:00:00Z',
-      },
-    },
-  };
-  const result = await cli([
-    'scrape',
-    'https://example.com',
-    '--timeout',
-    '2500',
-  ]);
-  expect(result.code).toBe(0);
-  expect(result.stdout).toBe('fixture\n');
-  expect(result.stderr).toContain('Scrape ID: plain-1');
-  expect(result.stderr).toContain('Credits: 0');
-  expect(result.stderr).toContain('Cache: hit');
-  expect(result.stderr).toContain('Cached at: 2026-09-17T00:00:00Z');
-  expect(requests[0].body.timeout).toBe(2500);
-  expect(requests[0].body).not.toHaveProperty('autoResume');
-});
-
-it('rejects malformed scrape timeouts before transport', async () => {
-  for (const timeout of ['0', '-1', '1.5', '10seconds']) {
-    const result = await cli([
-      'scrape',
-      'https://example.com',
-      '--timeout',
-      timeout,
-    ]);
-    expect(result.code).toBe(1);
-    expect(result.stderr).toContain('positive integer in milliseconds');
-  }
-  expect(requests).toHaveLength(0);
-});
-
-it('preserves server retry metadata through the scrape SDK error path', async () => {
-  status = 429;
-  response = {
-    success: false,
-    error: 'Rate limited',
-    code: 'RATE_LIMITED',
-    retry_after_seconds: 3,
-  };
-  const result = await cli(['scrape', 'https://example.com', '--json']);
-  expect(result.code).toBe(1);
-  expect(JSON.parse(result.stdout)).toMatchObject({
-    success: false,
-    status: 429,
-    code: 'RATE_LIMITED',
-    retryAfterSeconds: 3,
-  });
-  expect(result.stderr).toContain('Retry after: 3s');
-});
-
-it('retains query answers and receipts when JSON is explicitly requested', async () => {
-  response = {
-    success: true,
-    data: {
-      answer: 'fixture answer',
-      metadata: { scrapeId: 'answer-1', creditsUsed: 2 },
-    },
-  };
-  const result = await cli([
-    'scrape',
-    'https://example.com',
-    '--query',
-    'fixture question',
-    '--json',
-  ]);
-  expect(result.code).toBe(0);
-  expect(JSON.parse(result.stdout)).toMatchObject({
-    answer: 'fixture answer',
-    receipt: {
-      operationId: 'answer-1',
-      operationType: 'scrape',
-      creditsUsed: 2,
-    },
-  });
-});
-
-it('accepts search --pretty and preserves empty results and receipts', async () => {
-  response = {
-    success: true,
-    id: 'pretty-search',
-    creditsUsed: 0,
-    data: { web: [] },
-  };
-  const result = await cli([
-    'search',
-    'fixture',
-    '--sources',
-    'web',
-    '--pretty',
-  ]);
-  expect(result.code).toBe(0);
-  expect(result.stdout).toContain('\n  "success": true');
-  expect(JSON.parse(result.stdout)).toMatchObject({
-    ...response,
-    receipt: {
-      creditsUsed: 0,
-      operationId: 'pretty-search',
-      operationType: 'search',
-    },
-  });
-  expect(result.stderr).toContain('Search ID: pretty-search');
   expect(requests).toHaveLength(1);
 });
