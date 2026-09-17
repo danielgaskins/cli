@@ -45,7 +45,7 @@ import {
   parseEndpointFeedbackCliOptions,
   parseEndpointFeedbackEndpoint,
 } from './commands/feedback';
-import { handleAgentCommand } from './commands/agent';
+import { handleAgentCommand, handleAgentThreadCommand } from './commands/agent';
 import {
   handleBrowserLaunch,
   handleBrowserExecute,
@@ -80,6 +80,7 @@ import type { ScrapeFormat } from './types/scrape';
 import type { RelatedPapersOptions } from './types/research';
 import type { AgentWebhookConfig } from 'firecrawl';
 import { createCreateCommand } from './commands/create';
+import { createListCommand, createAlexandriaCommand } from './commands/list';
 
 // Initialize global configuration from environment variables
 initializeConfig();
@@ -936,7 +937,7 @@ Max upload size: 50 MB
  */
 function createSearchCommand(): Command {
   const searchCmd = new Command('search')
-    .description('Search the web using Firecrawl')
+    .description('Search the web and discover relevant Alexandria tools')
     .argument('<query>', 'Search query')
     .option(
       '--limit <number>',
@@ -945,7 +946,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--sources <sources>',
-      'Comma-separated sources to search: web, images, news (default: web)'
+      'Comma-separated sources: web, images, news, alexandria (default: web,alexandria; --sources web opts out of tools)'
     )
     .option(
       '--categories <categories>',
@@ -1077,7 +1078,14 @@ function createSearchCommand(): Command {
       await handleSearchCommand(searchOptions);
     });
 
-  searchCmd.addOption(new Option('--domain-tools').hideHelp());
+  searchCmd.option(
+    '--domain-tools',
+    'Include tools for domains in web results (on by default with Alexandria)'
+  );
+  searchCmd.option(
+    '--no-domain-tools',
+    'Disable domain matching; source selection still controls semantic tools'
+  );
   return searchCmd;
 }
 
@@ -1557,7 +1565,7 @@ function createAgentCommand(): Command {
     .option('--urls <urls>', 'Comma-separated URLs to focus extraction on')
     .option(
       '--model <model>',
-      'Model to use: spark-1-mini (default, cheaper) or spark-1-pro (higher accuracy)'
+      'Model to use: spark-2 (default), spark-1-mini, or spark-1-pro'
     )
     .option(
       '--schema <json>',
@@ -1598,6 +1606,26 @@ function createAgentCommand(): Command {
     .option('-o, --output <path>', 'Output file path (default: stdout)')
     .option('--json', 'Output as JSON format', false)
     .option('--pretty', 'Pretty print JSON output', false)
+    // Alexandria beta: agent threads (spark-2).
+    .addOption(
+      new Option(
+        '--thread <threadId>',
+        'Continue an existing thread with this prompt as the next turn'
+      )
+    )
+    .addOption(
+      new Option(
+        '--mode <mode>',
+        'extract returns structured data; chat returns a text message'
+      ).choices(['extract', 'chat'])
+    )
+    .addOption(
+      new Option('--effort <level>', 'Reasoning effort for the run').choices([
+        'low',
+        'medium',
+        'high',
+      ])
+    )
     .action(async (promptOrJobId, options) => {
       // Auto-detect if it's a job ID (UUID format)
       const isStatusCheck = options.status || isJobId(promptOrJobId);
@@ -1606,6 +1634,17 @@ function createAgentCommand(): Command {
       if ((isStatusCheck || isCancel) && !isJobId(promptOrJobId)) {
         console.error(
           'Error: --status and --cancel require a job ID, not a prompt.'
+        );
+        process.exit(1);
+      }
+
+      if (options.thread && !isJobId(options.thread)) {
+        console.error('Error: --thread requires a thread ID (UUID).');
+        process.exit(1);
+      }
+      if (options.thread && (isStatusCheck || isCancel)) {
+        console.error(
+          'Error: --thread continues a thread with a new prompt; it cannot be combined with --status or --cancel.'
         );
         process.exit(1);
       }
@@ -1648,7 +1687,7 @@ function createAgentCommand(): Command {
       }
 
       // Validate model
-      const validModels = ['spark-1-pro', 'spark-1-mini'];
+      const validModels = ['spark-1-pro', 'spark-1-mini', 'spark-2'];
       if (options.model && !validModels.includes(options.model)) {
         console.error(
           `Error: Invalid model "${options.model}". Valid models: ${validModels.join(', ')}`
@@ -1661,6 +1700,9 @@ function createAgentCommand(): Command {
         urls,
         schema,
         model: options.model,
+        effort: options.effort,
+        threadId: options.thread,
+        mode: options.mode,
         maxCredits: options.maxCredits,
         status: isStatusCheck,
         cancel: isCancel,
@@ -1677,6 +1719,45 @@ function createAgentCommand(): Command {
 
       await handleAgentCommand(agentOptions);
     });
+
+  // Alexandria beta: `firecrawl agent thread <threadId>` lists a thread's runs.
+  agentCmd.addCommand(
+    new Command('thread')
+      .description('Show a thread and its runs, oldest turn first')
+      .argument('<threadId>', 'Thread ID returned when an agent run starts')
+      .option('--include-data', "Inline each succeeded run's data", false)
+      .option(
+        '-k, --api-key <key>',
+        'Firecrawl API key (overrides global --api-key)'
+      )
+      .option('--api-url <url>', 'API URL (overrides global --api-url)')
+      .option('-o, --output <path>', 'Output file path (default: stdout)')
+      .option('--json', 'Output as JSON format', false)
+      .option('--pretty', 'Pretty print JSON output', false)
+      .action(async (threadId: string, _opts, command: Command) => {
+        if (!isJobId(threadId)) {
+          console.error('Error: thread requires a thread ID (UUID).');
+          process.exit(1);
+        }
+        // `agent` shares option names with this subcommand and consumes them
+        // first, so merge the parent's parsed values back in.
+        const options = command.optsWithGlobals();
+        // Subcommands are not matched by AUTH_REQUIRED_COMMANDS; gate here.
+        const { isCustomApiUrl } = await import('./utils/config');
+        if (!isCustomApiUrl(options.apiUrl)) {
+          await ensureAuthenticated();
+        }
+        await handleAgentThreadCommand({
+          threadId,
+          includeData: options.includeData,
+          apiKey: options.apiKey,
+          apiUrl: options.apiUrl,
+          output: options.output,
+          json: options.json,
+          pretty: options.pretty,
+        });
+      })
+  );
 
   return agentCmd;
 }
@@ -2125,7 +2206,9 @@ program.addCommand(createMapCommand());
 program.addCommand(createParseCommand());
 program.addCommand(createMonitorCommand());
 program.addCommand(createSearchCommand());
-program.addCommand(createFindToolsCommand(), { hidden: true });
+program.addCommand(createFindToolsCommand());
+program.addCommand(createListCommand());
+program.addCommand(createAlexandriaCommand());
 program.addCommand(createDeveloperCommand());
 program.addCommand(createResearchCommand());
 program.addCommand(createFeedbackCommand());
@@ -2164,7 +2247,7 @@ program
   .option('--api-url <url>', 'API URL (default: https://api.firecrawl.dev)')
   .option(
     '--web-url <url>',
-    'Web URL for browser login (default: https://firecrawl.dev)'
+    'Web URL for browser login (default: https://www.firecrawl.dev)'
   )
   .option(
     '-m, --method <method>',
@@ -2197,7 +2280,7 @@ program
   .option('--api-url <url>', 'API URL (default: https://api.firecrawl.dev)')
   .option(
     '--web-url <url>',
-    'Web URL for browser login (default: https://firecrawl.dev)'
+    'Web URL for browser login (default: https://www.firecrawl.dev)'
   )
   .option(
     '-m, --method <method>',

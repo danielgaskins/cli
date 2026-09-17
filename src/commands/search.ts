@@ -114,8 +114,8 @@ export async function executeSearch(
     // `firecrawl search-feedback <id>` workflow that consumers rely on.
     let envelope: Record<string, any>;
     if (isKeylessMode(options.apiKey, options.apiUrl)) {
-      // Keyless free tier: header-less request. The API identifies the CLI via
-      // the `integration: 'cli'` field already in searchParams.
+      // Keyless free tier: omit Authorization while retaining CLI transport
+      // metadata such as the agent-hints opt-in header.
       envelope = (await keylessRequest('/v2/search', searchBody)) as Record<
         string,
         any
@@ -177,9 +177,6 @@ function formatSearchReadable(
   options: SearchOptions
 ): string {
   const lines: string[] = [];
-  if (data.tools?.length) {
-    lines.push('=== Tools ===', JSON.stringify(data.tools, null, 2), '');
-  }
 
   // Format web results
   if (data.web && data.web.length > 0) {
@@ -284,6 +281,33 @@ function formatSearchReadable(
       }
       lines.push('');
     }
+  }
+
+  if (data.tools?.length) {
+    lines.push('=== Alexandria Tools ===', '');
+    for (const tool of data.tools) {
+      const address =
+        typeof tool.provider === 'string' && typeof tool.capability === 'string'
+          ? `${tool.provider}/${tool.capability}`
+          : undefined;
+      const title = tool.label ?? tool.name ?? address ?? tool.id ?? 'Tool';
+      lines.push(String(title));
+      if (address) lines.push(`  Tool: ${address}`);
+      if (typeof tool.description === 'string')
+        lines.push(`  ${clipPassage(tool.description)}`);
+      if (typeof tool.creditsCost === 'number')
+        lines.push(
+          `  Cost: ${tool.creditsCost} credits per ${tool.perRecord ? 'record' : 'call'}`
+        );
+      if (Array.isArray(tool.matchedUrls) && tool.matchedUrls.length)
+        lines.push(`  Matches: ${tool.matchedUrls.join(', ')}`);
+      lines.push('');
+    }
+    lines.push(
+      'Discovery only. Inspect inputs, coverage and access in --json output.',
+      'Use find-tools for tool sets or missing contracts; execute selected tools with scrape --alexandria <provider/capability> --options <json>.',
+      ''
+    );
   }
 
   return lines.join('\n');

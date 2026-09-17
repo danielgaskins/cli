@@ -18,7 +18,7 @@ export interface SearchOptions extends AgentHintOptions {
   apiUrl?: string;
   /** Maximum number of results (default: 5, max: 100) */
   limit?: number;
-  /** Sources to search: web, images, news (default: web) */
+  /** Sources to search: web, images, news, alexandria (CLI default: web,alexandria) */
   sources?: SearchSource[];
   /** Categories to filter results: github, research, pdf, developer */
   categories?: SearchCategory[];
