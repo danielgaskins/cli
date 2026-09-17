@@ -448,7 +448,7 @@ it('keeps server-authored search error guidance in JSON', async () => {
   };
   const result = await cli(['search', 'example', '--sources', 'web', '--json']);
   expect(result.code).toBe(1);
-  expect(JSON.parse(result.stdout)).toEqual(response);
+  expect(JSON.parse(result.stdout)).toEqual({ ...response, status: 400 });
 });
 
 it('sends provider calls to Scrape with a stable retry ID and preserves the receipt', async () => {
@@ -468,6 +468,12 @@ it('sends provider calls to Scrape with a stable retry ID and preserves the rece
     expect(JSON.parse(result.stdout)).toEqual({
       ...response,
       requestId: 'retry-1',
+      receipt: {
+        creditsUsed: 1,
+        requestId: 'retry-1',
+        operationId: 'scrape-1',
+        operationType: 'scrape',
+      },
     });
   }
   expect(requests).toHaveLength(2);
@@ -509,6 +515,8 @@ it('relays terms refusals and keeps the request ID on failure', async () => {
   expect(result.code).toBe(1);
   const body = JSON.parse(result.stdout);
   expect(body).toMatchObject(response);
+  expect(body.guidance).toContain('wait for explicit approval');
+  expect(body.guidance).toContain('/app/settings?tab=data-sources');
   expect(result.stderr).toContain(body.requestId);
   expect(requests).toHaveLength(1);
 });
@@ -931,5 +939,45 @@ it('fails clearly on an unknown thread', async () => {
   expect(requests).toHaveLength(1);
   const malformed = await cli(['agent', 'thread', 'nope']);
   expect(malformed.code).toBe(1);
+  expect(requests).toHaveLength(1);
+});
+
+it('falls back to category browsing after an unknown provider, but preserves other failures', async () => {
+  responseFor = (body) =>
+    body.alexandria[0].options.providers
+      ? {
+          success: true,
+          scrape_id: 'discovery-1',
+          data: {
+            creditsCost: 0,
+            alexandria: [
+              {
+                provider: 'firecrawl',
+                capability: 'find-tools',
+                error: {
+                  status: 400,
+                  code: 'invalid_request',
+                  message:
+                    'Unknown or unavailable providers. Browse the catalogue for accessible IDs; use query for natural-language search.',
+                },
+              },
+            ],
+          },
+        }
+      : catalogue('providers', [{ id: 'amazon-com', provider: 'amazon-com' }]);
+  const result = await cli(['list', 'shopping', '--json']);
+  expect(result.code, JSON.stringify(result)).toBe(0);
+  expect(requests.map(({ body }) => body.alexandria[0].options)).toEqual([
+    { providers: ['shopping'], level: 'tools', limit: 20 },
+    { categories: ['shopping'], level: 'providers', limit: 20 },
+  ]);
+  expect(result.stdout).toContain('amazon-com');
+  requests.length = 0;
+  responseFor = () => ({
+    success: false,
+    error: 'Rate limit exceeded',
+    code: 'rate_limited',
+  });
+  expect((await cli(['list', 'shopping', '--json'])).code).toBe(1);
   expect(requests).toHaveLength(1);
 });

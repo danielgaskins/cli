@@ -279,6 +279,12 @@ describe('server agent hints', () => {
       data: { alexandria, creditsCost: 1 },
       requestId: 'retry-1',
       agent_hints: hints,
+      receipt: {
+        operationType: 'scrape',
+        operationId: 'scrape-3',
+        requestId: 'retry-1',
+        creditsUsed: 1,
+      },
     });
     expect(process.exitCode).toBe(1);
   });
