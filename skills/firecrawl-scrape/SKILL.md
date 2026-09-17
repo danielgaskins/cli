@@ -23,7 +23,7 @@ firecrawl scrape "<url>" --only-main-content -o .firecrawl/page.md
 # Wait for JS to render, then scrape
 firecrawl scrape "<url>" --wait-for 3000 -o .firecrawl/page.md
 
-# Multiple URLs (markdown only; each saved to .firecrawl/; -o is ignored)
+# Multiple URLs (each saved to .firecrawl/ by default)
 firecrawl scrape https://example.com https://example.com/blog https://example.com/docs
 
 # Get markdown and links together
@@ -51,7 +51,7 @@ The cap applies to each PDF, not the whole command or total credits. Extra forma
 
 - **Prefer plain scrape over `--query`.** Scrape to a file, then use `grep`, `head`, or read the markdown directly — you can search and reason over the full content yourself. Use `--query` only when you want a single targeted answer without saving the page (costs 5 extra credits).
 - **Scrape handles static pages and JS-rendered SPAs.** Escalate to `interact` when the page needs interaction (clicks, form fills, pagination) or scrape misses content.
-- Multiple URLs are scraped concurrently — check `firecrawl --status` for your concurrency limit. This mode saves markdown only and ignores `-o`; other requested formats are dropped. If markdown wasn't requested, the whole JSON response is written into the `.md` file.
+- Multiple URLs are scraped concurrently. Use `--json` for an ordered JSON array on stdout or `-o results.json` to save it. Each item contains `url`, `success`, and full `data` with metadata or an `error`; any failed URL makes the command exit nonzero. Without either flag, each result is saved under `.firecrawl/` as markdown when available, otherwise JSON in a `.md` file. Check `firecrawl --status` for your concurrency limit.
 - Single format outputs raw content. Multiple formats (e.g., `--format markdown,links`) output JSON.
 - Always quote URLs — shell interprets `?` and `&` as special characters.
 - Naming convention: `.firecrawl/{site}-{path}.md`

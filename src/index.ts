@@ -356,7 +356,7 @@ program
 function createScrapeCommand(): Command {
   const scrapeCmd = new Command('scrape')
     .description(
-      'Scrape one or more URLs. Multiple URLs are scraped concurrently and saved to .firecrawl/'
+      'Scrape one or more URLs. Multiple URLs save to .firecrawl/ by default; --json or -o produces an ordered JSON array.'
     )
     .argument('[urls...]', 'URL(s) to scrape')
     .option(

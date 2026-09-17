@@ -210,7 +210,7 @@ When using a custom API URL (anything other than `https://api.firecrawl.dev`), a
 
 ### `scrape` - Scrape URLs
 
-Extract content from any webpage. Pass multiple URLs to scrape them concurrently -- each result is saved to `.firecrawl/` automatically.
+Extract content from any webpage. Pass multiple URLs to scrape them concurrently. By default, each result is saved to `.firecrawl/`. With `--json` or `-o <path>`, results form one JSON array in input order, written to stdout or the requested file. Each item contains `url`, `success`, and the full `data` (including metadata) or an `error`. `--pretty` indents the array. Any failed URL makes the command exit nonzero, after successful results and errors have been saved.
 
 ```bash
 # Basic usage (outputs markdown)
