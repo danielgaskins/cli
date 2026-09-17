@@ -70,6 +70,11 @@ describe('multi-URL scrape output', () => {
           url: urls[index],
           success: true,
           data,
+          receipt: {
+            creditsUsed: index + 1,
+            operationId: `id-${index}`,
+            operationType: 'scrape',
+          },
         })),
         null,
         2
@@ -114,9 +119,18 @@ describe('multi-URL scrape output', () => {
       );
       expect(output).toEqual([
         allFailed
-          ? { url: urls[0], success: false, error: 'First failed' }
-          : { url: urls[0], success: true, data: documents[0] },
-        { url: urls[1], success: false, error: 'Second failed' },
+          ? { url: urls[0], success: false, error: 'First failed', receipt: {} }
+          : {
+              url: urls[0],
+              success: true,
+              data: documents[0],
+              receipt: {
+                operationId: 'id-0',
+                operationType: 'scrape',
+                creditsUsed: 1,
+              },
+            },
+        { url: urls[1], success: false, error: 'Second failed', receipt: {} },
       ]);
       expect(process.exitCode).toBe(1);
       expect(process.stdout.write).not.toHaveBeenCalled();

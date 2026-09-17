@@ -47,6 +47,17 @@ firecrawl scrape "https://example.com/report.pdf" --max-pages 5 --json -o .firec
 
 The cap applies to each PDF, not the whole command or total credits. Extra formats and options can add charges. The CLI does not quote page counts or costs before execution. Use JSON output to inspect the returned `metadata.numPages` (parsed), `metadata.totalPages` (document total), and `metadata.creditsUsed` when present; a smaller parsed count means the result is partial.
 
+## Receipts and recovery
+
+Use `--json` to preserve metadata and the additive `receipt` (at the root for a single scrape, on each result item for multiple URLs). `receipt.creditsUsed` is actual returned usage, including zero; missing means unknown. Existing `metadata.creditsUsed` remains available when returned. `receipt.operationId` identifies the server scrape; Alexandria `receipt.requestId` is a separate client idempotency ID. Available IDs, credit usage, and retry timing print to stderr. Keep stderr separate from JSON stdout.
+
+Failures with `--json` or `-o` write structured errors before exiting nonzero, even if the filename ends in `.md`. Inspect the exit code and saved error/status fields before using the content. A successful transport response can still contain a refused or unsuccessful page; do not treat it as task completion or infer a refund.
+
+- Use `--timeout <milliseconds>` to set the server-side scrape timeout; the SDK allows transport overhead. A timeout does not prove the operation stopped or cost zero credits.
+- Use `--max-age 0` when fresh URL content is required. This does not guarantee the source page succeeds.
+- On rate limits, honor the returned retry delay when available, otherwise use bounded exponential backoff. Limits are shared across a team's keys and depend on plan and endpoint.
+- For Alexandria, keep the same `--request-id` while an operation is unresolved. A completed failure can replay under the same ID; starting a new attempt requires a new ID and may charge again. Never rotate IDs automatically. Ordinary URL scrape does not support `--request-id`.
+
 ## Tips
 
 - **Prefer plain scrape over `--query`.** Scrape to a file, then use `grep`, `head`, or read the markdown directly — you can search and reason over the full content yourself. Use `--query` only when you want a single targeted answer without saving the page (costs 5 extra credits).

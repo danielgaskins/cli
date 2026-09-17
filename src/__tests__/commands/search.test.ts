@@ -637,6 +637,7 @@ describe('executeSearch', () => {
       expect(result).toEqual({
         success: false,
         error: errorMessage,
+        receipt: {},
       });
     });
 
@@ -648,7 +649,7 @@ describe('executeSearch', () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unknown error occurred');
+      expect(result.error).toBe('Request failed');
     });
   });
 
@@ -670,6 +671,11 @@ describe('executeSearch', () => {
           mockSearchResponse(
             { web: [] },
             {
+              receipt: {
+                operationId: 'search-empty',
+                operationType: 'search',
+                creditsUsed: 2,
+              },
               id: 'search-empty',
               creditsUsed: 2,
               warning: 'Partial upstream response',
@@ -692,6 +698,11 @@ describe('executeSearch', () => {
         expect(body).toEqual({
           success: true,
           data: { web: [] },
+          receipt: {
+            operationId: 'search-empty',
+            operationType: 'search',
+            creditsUsed: 2,
+          },
           id: 'search-empty',
           creditsUsed: 2,
           warning: 'Partial upstream response',

@@ -1,3 +1,5 @@
+import { apiFailure } from './alexandria';
+import { receiptFor, printReceipt, printRetry } from '../utils/receipt';
 /**
  * Scrape command implementation
  */
@@ -115,6 +117,13 @@ export async function executeScrape(
     scrapeParams.maxAge = options.maxAge;
   }
 
+  if (options.timeout !== undefined) {
+    if (!Number.isSafeInteger(options.timeout) || options.timeout <= 0)
+      throw new Error('--timeout must be a positive integer in milliseconds.');
+    scrapeParams.timeout = options.timeout;
+    scrapeParams.autoResume = false;
+  }
+
   if (options.maxPages !== undefined) {
     scrapeParams.parsers = [{ type: 'pdf', maxPages: options.maxPages }];
   }
@@ -155,9 +164,10 @@ export async function executeScrape(
     if (isKeylessMode(options.apiKey, options.apiUrl)) {
       // Keyless free tier: header-less request. The API identifies the CLI via
       // the `integration: 'cli'` field already in scrapeParams.
+      const { autoResume: _autoResume, ...wireParams } = scrapeParams;
       const json = await keylessRequest('/v2/scrape', {
         url: options.url,
-        ...scrapeParams,
+        ...wireParams,
       });
       result = json?.data ?? json;
     } else {
@@ -170,9 +180,14 @@ export async function executeScrape(
     const requestEndTime = Date.now();
     outputTiming(options, requestStartTime, requestEndTime);
 
+    const receipt = receiptFor(result, 'scrape');
+    printReceipt(receipt);
+    if (typeof result?.metadata?.cacheState === 'string')
+      console.error(`Cache: ${result.metadata.cacheState}`);
+    if (typeof result?.metadata?.cachedAt === 'string')
+      console.error(`Cached at: ${result.metadata.cachedAt}`);
     const scrapeId = result?.metadata?.scrapeId;
     if (scrapeId) {
-      process.stderr.write(`Scrape ID: ${scrapeId}\n`);
       try {
         saveInteractSession({
           scrapeId,
@@ -190,15 +205,17 @@ export async function executeScrape(
     return {
       success: true,
       data: result,
+      receipt,
     };
   } catch (error) {
     const requestEndTime = Date.now();
     outputTiming(options, requestStartTime, requestEndTime, error);
 
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
+    const failure = apiFailure(error);
+    const receipt = receiptFor(failure, 'scrape');
+    printReceipt(receipt);
+    printRetry(failure);
+    return { ...failure, success: false, receipt };
   }
 }
 
@@ -211,7 +228,14 @@ export async function handleScrapeCommand(
   const result = await executeScrape(options);
 
   // Query mode: output answer directly
-  if (options.query && result.success && result.data?.answer) {
+  if (
+    options.query &&
+    !options.json &&
+    !options.pretty &&
+    !options.output?.endsWith('.json') &&
+    result.success &&
+    result.data?.answer
+  ) {
     writeOutput(result.data.answer, options.output, !!options.output);
     return;
   }

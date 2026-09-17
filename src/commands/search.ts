@@ -1,3 +1,4 @@
+import { receiptFor, printReceipt, printRetry } from '../utils/receipt';
 /**
  * Search command implementation
  */
@@ -141,16 +142,14 @@ export async function executeSearch(
       warning: envelope.warning,
       id: envelope.id,
       creditsUsed: envelope.creditsUsed,
+      receipt: receiptFor(envelope, 'search'),
     };
   } catch (error) {
+    const failure = apiFailure(error);
     return {
+      ...failure,
       success: false,
-      error:
-        options.domainTools || options.sources?.includes('alexandria')
-          ? JSON.stringify(apiFailure(error))
-          : error instanceof Error
-            ? error.message
-            : 'Unknown error occurred',
+      receipt: receiptFor(failure, 'search'),
     };
   }
 }
@@ -319,20 +318,22 @@ export async function handleSearchCommand(
 ): Promise<void> {
   const result = await executeSearch(options);
 
+  printReceipt(result.receipt ?? {});
+  printRetry(result as unknown as Record<string, unknown>);
   if (!result.success) {
     console.error('Error:', result.error);
-    process.exit(1);
+    if (options.json || options.pretty || options.output)
+      writeOutput(
+        JSON.stringify(result, null, options.pretty ? 2 : undefined),
+        options.output,
+        !!options.output
+      );
+    process.exitCode = 1;
+    return;
   }
 
   if (!result.data) {
     return;
-  }
-
-  if (result.id) {
-    console.error(`Search ID: ${result.id}`);
-  }
-  if (typeof result.creditsUsed === 'number') {
-    console.error(`Credits: ${result.creditsUsed}`);
   }
 
   // Check if there are any results
@@ -347,10 +348,15 @@ export async function handleSearchCommand(
 
   // Use JSON format if --json or --pretty flag is set
   // --pretty implies JSON output
-  if (options.json || options.pretty) {
+  if (
+    options.json ||
+    options.pretty ||
+    options.output?.toLowerCase().endsWith('.json')
+  ) {
     const jsonOutput: Record<string, any> = {
       success: true,
       data: result.data,
+      receipt: result.receipt,
     };
 
     if (result.warning) {
