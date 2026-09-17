@@ -419,7 +419,9 @@ it('preserves search hints on empty JSON responses and supports local suppressio
     success: true,
     id: 'search-empty',
     data: { web: [] },
-    agent_hints: ['After evaluation, submit feedback for search-empty.'],
+    agent_hints: [
+      'Try a narrower query if the result set does not cover the task.',
+    ],
   };
   const args = ['search', 'example', '--sources', 'web', '--json'];
   const result = await cli(args);

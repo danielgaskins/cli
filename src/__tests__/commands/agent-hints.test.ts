@@ -21,7 +21,7 @@ vi.mock('../../utils/client', async () => ({
 describe('server agent hints', () => {
   const hints = [
     'Inspect the returned tool definition.',
-    'Submit feedback after evaluation.',
+    'Use the selected tool definition to make the next request.',
   ];
   let directory: string;
   let post: ReturnType<typeof vi.fn>;
@@ -283,10 +283,10 @@ describe('server agent hints', () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it('accepts only string hints and caps malformed upstream arrays at three', () => {
+  it('accepts only string hints and caps malformed upstream arrays at two', () => {
     expect(
       agentHintMetadata({ agent_hints: ['one', null, 'two', 'three', 'four'] })
-    ).toEqual({ agent_hints: ['one', 'two', 'three'] });
+    ).toEqual({ agent_hints: ['one', 'two'] });
     expect(agentHintMetadata({ agent_hints: 'not an array' })).toEqual({});
     expect(agentHintMetadata({})).toEqual({});
   });

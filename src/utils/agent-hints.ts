@@ -17,7 +17,7 @@ export function agentHintMetadata(
   const hints = (source as AgentHintMetadata).agent_hints;
   if (!Array.isArray(hints)) return {};
   return {
-    agent_hints: hints.filter((hint) => typeof hint === 'string').slice(0, 3),
+    agent_hints: hints.filter((hint) => typeof hint === 'string').slice(0, 2),
   };
 }
 

@@ -4,7 +4,7 @@ Command-line interface for Firecrawl. Search, scrape, interact, crawl, map, sear
 
 ### API response guidance
 
-Search, Scrape, Parse, Map, and Alexandria commands preserve optional `agent_hints` returned by the API. These are up to three server-authored suggestions for useful next requests or feedback after evaluating a result. The CLI does not generate guidance, execute suggested requests, or submit feedback automatically.
+Search, Scrape, Parse, Map, and Alexandria commands preserve optional `agent_hints` returned by the API. These are up to two server-authored suggestions for useful next requests. Static feedback instructions are not response hints. The CLI does not generate guidance, execute suggested requests, or submit feedback automatically.
 
 The CLI explicitly opts into this guidance with the `X-Firecrawl-Agent-Hints: true` request header. The API leaves hints disabled by default for ordinary HTTP and SDK callers.
 
