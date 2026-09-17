@@ -1009,12 +1009,8 @@ function createSearchCommand(): Command {
     )
     .option('--api-url <url>', 'API URL (overrides global --api-url)')
     .option('-o, --output <path>', 'Output file path (default: stdout)')
-    // .option(
-    //   '-p, --pretty',
-    //   'Output as pretty JSON (default: human-readable)',
-    //   false
-    // )
     .option('--json', 'Output as compact JSON', false)
+    .option('--pretty', 'Output as pretty-printed JSON', false)
     .action(async (query, options) => {
       // Parse sources
       let sources: SearchSource[] = ['web', 'alexandria'];

@@ -1046,3 +1046,31 @@ it('retains query answers and receipts when JSON is explicitly requested', async
     },
   });
 });
+
+it('accepts search --pretty and preserves empty results and receipts', async () => {
+  response = {
+    success: true,
+    id: 'pretty-search',
+    creditsUsed: 0,
+    data: { web: [] },
+  };
+  const result = await cli([
+    'search',
+    'fixture',
+    '--sources',
+    'web',
+    '--pretty',
+  ]);
+  expect(result.code).toBe(0);
+  expect(result.stdout).toContain('\n  "success": true');
+  expect(JSON.parse(result.stdout)).toMatchObject({
+    ...response,
+    receipt: {
+      creditsUsed: 0,
+      operationId: 'pretty-search',
+      operationType: 'search',
+    },
+  });
+  expect(result.stderr).toContain('Search ID: pretty-search');
+  expect(requests).toHaveLength(1);
+});

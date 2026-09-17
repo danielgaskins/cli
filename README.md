@@ -210,7 +210,7 @@ When using a custom API URL (anything other than `https://api.firecrawl.dev`), a
 
 ### `scrape` - Scrape URLs
 
-Extract content from any webpage. A single URL writes to stdout unless `-o` is supplied. Pass multiple URLs to scrape them concurrently; without output flags, each result is saved to `.firecrawl/`. With `--json` or `-o <path>`, results form one JSON array in input order, written to stdout or the requested file. Each item contains `url`, `success`, and the full `data` (including metadata) or an `error`. `--pretty` indents the array. Any failed URL makes the command exit nonzero, after successful results and errors have been saved.
+Extract content from any webpage. A single URL writes to stdout unless `-o` is supplied. Pass multiple URLs to scrape them concurrently; without output flags, successful results are saved to `.firecrawl/`, while failed URLs are reported on stderr without per-URL files. With `--json` or `-o <path>`, results form one JSON array in input order, written to stdout or the requested file. Each item contains `url`, `success`, and the full `data` (including metadata) or an `error`. `--pretty` indents the array. Any failed URL makes the command exit nonzero, after successful results and errors have been saved.
 
 ```bash
 # Basic usage (outputs markdown)
@@ -367,6 +367,7 @@ Search prints the returned Search ID and credit usage to stderr when available, 
 | `--only-main-content`        | Include only main content when scraping (default: true)                                                                                                                   |
 | `-o, --output <path>`        | Save to file                                                                                                                                                              |
 | `--json`                     | Output as compact JSON                                                                                                                                                    |
+| `--pretty`                   | Output as pretty-printed JSON                                                                                                                                             |
 
 #### Examples
 
