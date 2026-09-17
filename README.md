@@ -345,6 +345,8 @@ firecrawl search "API documentation" --scrape --scrape-formats markdown,links
 firecrawl search "AI data tools"
 ```
 
+Search prints the returned Search ID and credit usage to stderr when available, keeping stdout suitable for piping. `--json` and `--pretty` preserve the response metadata even when no results match; `-o` also saves empty results.
+
 #### Search Options
 
 | Option                       | Description                                                                                                                                                               |
