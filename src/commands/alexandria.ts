@@ -120,9 +120,9 @@ export async function handleAlexandria(
     envelope.data?.alexandria?.some((item: any) => item.error);
   if (failed) process.exitCode = 1;
   if (envelope.code === 'THIRD_PARTY_DATA_TERMS_REQUIRED') {
-    console.error(
-      'Review the provider terms with firecrawl alexandria terms show <provider>. After review, accept with firecrawl alexandria terms accept <provider> --terms-version <version> --digest <sha256> --confirm.'
-    );
+    envelope.guidance =
+      'Review the provider terms with firecrawl alexandria terms show <provider>. Present the terms to the user and wait for explicit approval. Only then accept with firecrawl alexandria terms accept <provider> --terms-version <version> --digest <sha256> --confirm. If the API-provided link is unavailable, use https://www.firecrawl.dev/app/settings?tab=data-sources. Do not automatically retry or accept.';
+    console.error(envelope.guidance);
   }
   writeOutput(
     JSON.stringify(envelope, null, options.pretty ? 2 : undefined),
@@ -156,7 +156,7 @@ export function createFindToolsCommand(): Command {
     .argument('[urls...]', 'Known HTTP(S) URLs to find tools for')
     .option(
       '--options <json>',
-      'Catalogue selectors: providers, categories, groups, capabilities; level: providers|groups|tools; limit: 1-100; expand: options,response,examples'
+      'Discovery options: query, urls, providers, categories, groups, capabilities; level: providers|groups|tools; limit: 1-100; expand: options,response,examples. Use provider and capability IDs returned by discovery.'
     )
     .option(
       '--request <json>',
