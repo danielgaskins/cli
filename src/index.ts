@@ -516,6 +516,9 @@ Examples:
 
 Bare names such as "amazon" show guidance without a lookup or execution.
 Tool addresses are validated by Alexandria; unknown tools never fall back to URL scraping.
+Large output: use --json -o result.json and inspect selected fields.
+Retained result: firecrawl scrape firecrawl/bash --options '{"requestId":"<id>","command":"ls -lh"}'
+Use a workflow request ID or regular scrape ID; follow-up commands use workspaceId.
 `
   );
   addAlexandriaScrapeOptions(scrapeCmd);
@@ -1092,7 +1095,7 @@ function createSearchCommand(): Command {
   );
   searchCmd.addHelpText(
     'after',
-    '\nSemantic tool search: firecrawl search alexandria "find company contacts"\n'
+    '\nSemantic tool search: firecrawl search alexandria "find company contacts"\nInspect a selected contract: firecrawl list <provider> <capability> --pretty\nExecute: firecrawl scrape <provider/capability> --options <json>\nLarge search results: use --json -o search.json and read selected fields.\n'
   );
   return searchCmd;
 }
