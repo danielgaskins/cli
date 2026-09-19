@@ -26,7 +26,7 @@ firecrawl search "your query" --sources news --tbs qdr:d -o .firecrawl/news.json
 
 Run `firecrawl search --help` for the full option list.
 
-`--categories developer` weighs the developer index beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
+`--categories developer` weighs the developer index of public repositories, GitHub issues, merged PRs, READMEs, and docs beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
 
 **Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and one feedback event is sent within the time window (unless opted out).
 
@@ -42,7 +42,7 @@ If no returned tool covers the country/market/segment or required inputs, contin
 
 ## Tips
 
-- **`--highlights` on by default:** results are query-relevant excerpts, not full-page snippets. Use `--no-highlights` for the original snippets.
+- **`--highlights` on by default:** web and news results are query-relevant excerpts, not full-page snippets. Use `--no-highlights` for the original snippets. Highlights are omitted for zero-data-retention searches.
 - **`--scrape` fetches full content** — reuse that content instead of re-scraping result URLs. This saves credits and avoids redundant fetches.
 - Always write results to `.firecrawl/` with `-o` to avoid context window bloat.
 - Use `jq` to extract URLs or titles: `jq -r '.data.web[].url' .firecrawl/search.json`

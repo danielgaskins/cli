@@ -82,9 +82,51 @@ describe('CLI argv parsing', () => {
       expect(result.stdout).not.toContain(removedFilter);
     }
     expect(result.stdout).toContain('scoping intent in');
+    expect(result.stdout.replace(/\s+/g, ' ')).toContain('public repositories');
     // Lean surface: the CLI does not point at the REST API for filters.
     expect(result.stdout).not.toContain('docs.firecrawl.dev');
     expect(result.stderr).not.toContain('unknown command');
+  });
+
+  testWithBuiltCli(
+    'describes default search highlights and public developer coverage',
+    () => {
+      const result = spawnSync(
+        process.execPath,
+        [cliPath, 'search', '--help'],
+        {
+          cwd: process.cwd(),
+          encoding: 'utf8',
+        }
+      );
+
+      expect(result.status).toBe(0);
+      const flattened = result.stdout.replace(/\s+/g, ' ');
+      expect(flattened).toContain(
+        'query-relevant highlights in web and news results by default'
+      );
+      expect(flattened).toContain(
+        'Highlights are omitted for zero-data-retention searches'
+      );
+      expect(flattened).toContain('public repositories');
+      expect(flattened).toContain('research, pdf, developer');
+      expect(flattened).not.toContain('github, research');
+    }
+  );
+
+  testWithBuiltCli('rejects the legacy github search category', () => {
+    const result = spawnSync(
+      process.execPath,
+      [cliPath, 'search', 'tokio', '--categories', 'github'],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      }
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Invalid category "github"');
+    expect(result.stderr).toContain('research, pdf, developer');
   });
 
   testWithBuiltCli('lists the research command in root help output', () => {

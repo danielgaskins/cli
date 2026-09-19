@@ -191,14 +191,14 @@ describe('executeSearch', () => {
 
       await executeSearch({
         query: 'web scraping python',
-        categories: ['github'],
+        categories: ['pdf'],
       });
 
       expect(mockHttpPost).toHaveBeenCalledWith(
         '/v2/search',
         expect.objectContaining({
           query: 'web scraping python',
-          categories: [{ type: 'github' }],
+          categories: [{ type: 'pdf' }],
         })
       );
     });
@@ -406,7 +406,7 @@ describe('executeSearch', () => {
         query: 'comprehensive test',
         limit: 20,
         sources: ['web', 'news'],
-        categories: ['github'],
+        categories: ['developer'],
         tbs: 'qdr:w',
         location: 'Germany',
         country: 'DE',
@@ -421,7 +421,7 @@ describe('executeSearch', () => {
         limit: 20,
         integration: 'cli',
         sources: [{ type: 'web' }, { type: 'news' }],
-        categories: [{ type: 'github' }],
+        categories: [{ type: 'developer' }],
         tbs: 'qdr:w',
         location: 'Germany',
         country: 'DE',
@@ -745,8 +745,7 @@ describe('executeSearch', () => {
     });
 
     it('should accept valid category types', async () => {
-      const categoryList: Array<'github' | 'research' | 'pdf' | 'developer'> = [
-        'github',
+      const categoryList: Array<'research' | 'pdf' | 'developer'> = [
         'research',
         'pdf',
         'developer',
