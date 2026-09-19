@@ -919,9 +919,7 @@ Max upload size: 50 MB
  */
 function createSearchCommand(): Command {
   const searchCmd = new Command('search')
-    .description(
-      'Search the web and discover relevant Alexandria tools, with query-relevant highlights by default'
-    )
+    .description('Search the web and discover relevant Alexandria tools')
     .argument('<query>', 'Search query, or alexandria for semantic tool search')
     .argument('[tool-query]', 'Query for search alexandria')
     .option(
@@ -961,7 +959,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--highlights',
-      'Return query-relevant highlights for each search result.'
+      'Return highlights for each search result (default).'
     )
     .option(
       '--no-highlights',

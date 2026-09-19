@@ -31,7 +31,7 @@ export interface SearchOptions {
   timeout?: number;
   /** Exclude URLs invalid for other Firecrawl endpoints */
   ignoreInvalidUrls?: boolean;
-  /** Return query-relevant highlights instead of the original search snippets */
+  /** Return highlights instead of the original search snippets */
   highlights?: boolean;
   /** Output file path */
   output?: string;
