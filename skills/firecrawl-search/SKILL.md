@@ -9,9 +9,7 @@ allowed-tools:
 
 # firecrawl search
 
-Search naturally using the user’s actual question. In the Alexandria beta, default search returns web results plus relevant Alexandria tools, with optional web content scraping.
-
-For Alexandria beta capabilities, replace `firecrawl` in these examples with `npx firecrawl-cli@alexandria`. Keep the user’s stable installation unchanged.
+Search naturally using the user’s actual question. Default search returns web results plus relevant Alexandria tools, with optional web content scraping.
 
 ## Quick start
 
@@ -34,7 +32,7 @@ Run `firecrawl search --help` for the full option list.
 
 ## Alexandria in normal search
 
-The beta defaults to `web,alexandria` with domain-tool matching on. Preserve the user's location, marketplace, and constraints in the query; do not turn normal research into an artificial tool-discovery query. Inspect `data.web` and `data.tools` from the same response.
+Search defaults to `web,alexandria` with domain-tool matching on. Preserve the user's location, marketplace, and constraints in the query; do not turn normal research into an artificial tool-discovery query. Inspect `data.web` and `data.tools` from the same response.
 
 A tool match is not executed data. If it fits the task, read its inputs, coverage, and access requirements in the JSON. Displayed pricing is informational, not an extra confirmation gate. Inspect only the selected contract with `firecrawl list <provider> <capability> --pretty`, then execute it with `firecrawl scrape <provider/capability> --options '<input JSON>'` (`--alexandria` remains supported). All provider execution goes through Scrape; `search --scrape` only fetches web result content, not provider tools.
 
@@ -54,7 +52,7 @@ firecrawl list pizzahut-com restaurants/store --pretty
 firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<store_number>"}'
 ```
 
-Default beta search combines web results, domain matches and semantic tools; `search alexandria` returns semantic tool matches only. Read the selected contract instead of expanding the entire catalogue. Tool discovery is not execution.
+Default search combines web results, domain matches and semantic tools; `search alexandria` returns semantic tool matches only. Read the selected contract instead of expanding the entire catalogue. Tool discovery is not execution.
 
 Keep large search responses in `--json -o` output and select the relevant results. If a subsequent provider execution or URL scrape exceeds the agent's output limit, use its retained ID with the [remote Bash recovery instructions](../firecrawl-scrape/references/large-results.md). Search request IDs are not supported Bash inputs. Do not blindly rerun a successful provider because the client could not display its result.
 

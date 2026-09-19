@@ -1,7 +1,5 @@
 # Inspect large retained results with remote Bash
 
-Use the Alexandria beta explicitly for every command below.
-
 ## Choose the retained ID
 
 - Successful Alexandria workflow: use the top-level `requestId` (or `receipt.requestId`) from its JSON response.
@@ -15,7 +13,7 @@ If the harness hid the output, recover the ID from its saved output or request r
 Supply the actual ID returned by the earlier successful request. The first call creates a remote workspace and runs the command in one tool call:
 
 ```bash
-npx firecrawl-cli@alexandria scrape firecrawl/bash --options '{"requestId":"<request-id>","command":"jq \".data.alexandria[] | {provider, capability, fields: (.data | keys)}\" response.json"}'
+firecrawl scrape firecrawl/bash --options '{"requestId":"<request-id>","command":"jq \".data.alexandria[] | {provider, capability, fields: (.data | keys)}\" response.json"}'
 ```
 
 Read the response's `data.alexandria[0].data`: `stdout`, `stderr`, `exitCode`, and `workspaceId`. Check both the API/provider error envelope and command exit code; missing stdout is not an empty successful result.
@@ -23,15 +21,15 @@ Read the response's `data.alexandria[0].data`: `stdout`, `stderr`, `exitCode`, a
 Reuse that workspace to sample SAM.gov records without another provider execution:
 
 ```bash
-npx firecrawl-cli@alexandria scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[:3] | map({title, source_url, response_deadline})\" response.json"}'
-npx firecrawl-cli@alexandria scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[3:6] | map({title, source_url, response_deadline})\" response.json"}'
+firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[:3] | map({title, source_url, response_deadline})\" response.json"}'
+firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[3:6] | map({title, source_url, response_deadline})\" response.json"}'
 ```
 
 Inspect keys before choosing a record path: providers do not all use `records`. For regular scrape results, `document.md` contains Markdown and `response.json` contains the result:
 
 ```bash
-npx firecrawl-cli@alexandria scrape firecrawl/bash --options '{"requestId":"<scrape-id>","command":"wc -c document.md; head -n 80 document.md"}'
-npx firecrawl-cli@alexandria scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"sed -n \"81,160p\" document.md"}'
+firecrawl scrape firecrawl/bash --options '{"requestId":"<scrape-id>","command":"wc -c document.md; head -n 80 document.md"}'
+firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"sed -n \"81,160p\" document.md"}'
 ```
 
 ## Bound the returned output, not the source data

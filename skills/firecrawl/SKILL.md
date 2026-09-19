@@ -63,7 +63,7 @@ For detailed command reference, run `firecrawl <command> --help`.
 
 ## Large results and Alexandria
 
-In the Alexandria beta, `search` discovers web results and tools, `list` reveals a selected tool's contract, and `scrape <provider/capability> --options '<JSON>'` executes it. Inspect only the contracts needed for the task.
+`search` discovers web results and tools, `list` reveals a selected tool's contract, and `scrape <provider/capability> --options '<JSON>'` executes it. Inspect only the contracts needed for the task.
 
 A client context/output error does not prove the provider failed. Keep the request/scrape ID and inspect saved output or use `scrape firecrawl/bash` against the retained result before repeating the request. See [large-result recovery](../firecrawl-scrape/references/large-results.md). Do not assume the client can signal an overflow back to the tool, or that Bash supports search IDs or every provider's retained data.
 

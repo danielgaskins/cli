@@ -1,12 +1,13 @@
 ---
 name: firecrawl-alexandria
-description: Compatibility entry point for Alexandria beta users. Search and scrape skills now own tool discovery, execution, and large-result recovery.
+description: Go beyond the web with structured provider data and tools. Use when a task needs records, listings, financial data, or other structured results beyond page text; follow the search and scrape skills to discover and execute relevant tools.
 ---
 
-# Alexandria guidance has moved
+# Go beyond the web
 
-Use [firecrawl-search](../firecrawl-search/SKILL.md) for natural search, semantic and domain tool matches, and progressive contract discovery.
+Alexandria connects web research to structured data and provider tools through Firecrawl's existing search and scrape workflow.
 
-Use [firecrawl-scrape](../firecrawl-scrape/SKILL.md) for provider execution, URL scraping, and remote Bash recovery of large retained results.
+- [Search](../firecrawl-search/SKILL.md) to find web results and relevant tools, then inspect only the contracts needed for the task.
+- [Scrape](../firecrawl-scrape/SKILL.md) to execute a selected tool or read a URL. For large retained results, use its remote Bash guidance to select the data you need.
 
-While using the beta, invoke `npx firecrawl-cli@alexandria` in place of `firecrawl`; do not replace the user's stable installation. This compatibility entry point adds no separate workflow.
+Use ordinary web results when they answer the question; use a provider tool when its coverage and inputs fit.
