@@ -26,7 +26,7 @@ firecrawl search "your query" --sources news --tbs qdr:d -o .firecrawl/news.json
 
 Run `firecrawl search --help` for the full option list.
 
-For a programming question, add `--categories developer`. It searches an index of public repositories, GitHub issues, merged pull requests, repository READMEs, and curated documentation sites. `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
+`--categories developer` searches an index of public repositories, GitHub issues, merged pull requests, repository READMEs, and curated documentation sites. `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
 
 **Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and one feedback event is sent within the time window (unless opted out).
 
