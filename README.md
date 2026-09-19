@@ -300,7 +300,7 @@ firecrawl https://example.com --exclude-tags nav,aside,.ad
 
 ### `search` - Search the web
 
-Search the web and optionally scrape content from search results. Web and news results include query-relevant highlights by default.
+Search the web and optionally scrape content from search results, with query-relevant highlights by default.
 
 ```bash
 # Basic search
@@ -355,7 +355,7 @@ firecrawl search "AI data tools"
 | `--location <location>`      | Geo-targeting (e.g., "Germany", "San Francisco,California,United States")                                                                                       |
 | `--country <code>`           | ISO country code (default: US)                                                                                                                                  |
 | `--timeout <ms>`             | Timeout in milliseconds (default: 60000)                                                                                                                        |
-| `--highlights`               | Query-relevant highlights for web and news results (default). Omitted for zero-data-retention searches                                                          |
+| `--highlights`               | Return query-relevant highlights for each result                                                                                                                |
 | `--no-highlights`            | Keep the original search snippets                                                                                                                               |
 | `--ignore-invalid-urls`      | Exclude URLs invalid for other Firecrawl endpoints                                                                                                              |
 | `--scrape`                   | Enable scraping of search results                                                                                                                               |

@@ -920,7 +920,7 @@ Max upload size: 50 MB
 function createSearchCommand(): Command {
   const searchCmd = new Command('search')
     .description(
-      'Search the web and discover relevant Alexandria tools, with query-relevant highlights in web and news results by default'
+      'Search the web and discover relevant Alexandria tools, with query-relevant highlights by default'
     )
     .argument('<query>', 'Search query, or alexandria for semantic tool search')
     .argument('[tool-query]', 'Query for search alexandria')

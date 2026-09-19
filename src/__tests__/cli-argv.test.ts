@@ -102,11 +102,9 @@ describe('CLI argv parsing', () => {
 
       expect(result.status).toBe(0);
       const flattened = result.stdout.replace(/\s+/g, ' ');
+      expect(flattened).toContain('query-relevant highlights by default');
       expect(flattened).toContain(
-        'query-relevant highlights in web and news results by default'
-      );
-      expect(flattened).toContain(
-        'Highlights are omitted for zero-data-retention searches'
+        'Return query-relevant highlights for each search result'
       );
       expect(flattened).toContain('public repositories');
       expect(flattened).toContain('research, pdf, developer');
