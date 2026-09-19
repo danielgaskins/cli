@@ -42,7 +42,7 @@ If no returned tool covers the country/market/segment or required inputs, contin
 
 ## Tips
 
-- **`--highlights` on by default:** results are excerpts from the page, not the original snippets. Use `--no-highlights` for the original snippets.
+- **`--highlights` on by default:** results are key excerpts from the page. Use `--no-highlights` for the original snippets.
 - **`--scrape` fetches full content** — reuse that content instead of re-scraping result URLs. This saves credits and avoids redundant fetches.
 - Always write results to `.firecrawl/` with `-o` to avoid context window bloat.
 - Use `jq` to extract URLs or titles: `jq -r '.data.web[].url' .firecrawl/search.json`
