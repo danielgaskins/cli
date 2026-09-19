@@ -23,8 +23,8 @@ Use Firecrawl for ordinary web research and content gathering (searching, readin
 
 Follow this escalation pattern:
 
-1. **Search** - No specific URL yet. Find pages, answer questions, discover sources.
-2. **Scrape** - Have a URL. Extract its content directly.
+1. **Search** - Start with the actual question. Find web sources and relevant structured-data tools through semantic and domain matching.
+2. **Inspect + Scrape** - For a tool match, use `list <provider> <capability> --pretty` if its contract is missing, then execute with `scrape <provider/capability> --options '<JSON>'`. For a URL, scrape its content directly.
 3. **Map + Scrape** - Large site or need a specific subpage. Use `map --search` to find the right URL, then scrape it.
 4. **Crawl** - Need bulk content from an entire site section (e.g., all /docs/).
 5. **Monitor** - Need recurring checks or ongoing alerts. Prefer setting a monitor with `--page` plus `--goal` instead of doing repeated one-off scrapes.

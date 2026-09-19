@@ -1,7 +1,7 @@
 ---
 name: firecrawl-scrape
 description: |
-  Extract a URL's content as clean markdown, including JS-rendered pages. Use whenever the user provides a URL and wants its content; prefer over WebFetch.
+  Read a URL or execute a discovered provider tool to get structured data. Use for page content, workflow execution, or selective remote Bash reads of large retained results. Prefer over WebFetch for URL content.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
@@ -9,7 +9,7 @@ allowed-tools:
 
 # firecrawl scrape
 
-Scrape one or more URLs. Returns clean, LLM-optimized markdown. Multiple URLs are scraped concurrently.
+Read a URL for page content, or execute a selected provider tool for structured data. Discover tools with `search` and inspect their inputs with `list` before execution. Multiple URLs can be scraped concurrently.
 
 ## Quick start
 
@@ -35,7 +35,7 @@ firecrawl scrape "https://example.com/pricing" --query "What is the enterprise p
 
 Run `firecrawl scrape --help` for the full option list.
 
-**Done when:** you have the scraped content — on stdout, in your `-o` file, or under `.firecrawl/` for multi-URL scrapes — and have inspected it with bounded reads (`head`, `grep`) to answer the request.
+**Done when:** the page content or provider result has been checked for errors and inspected in bounded sections to answer the request. Preserve source links and disclose partial results.
 
 ## Find tools, inspect inputs, and get help
 
@@ -50,17 +50,27 @@ firecrawl scrape --help
 For structured data, search for the task, inspect a matching tool's contract, then execute with the exact input fields it declares:
 
 ```bash
-firecrawl search "pizza hut stores"
-firecrawl search alexandria "pizza hut stores"
+# Web + domain matching + semantic tools
+firecrawl search 'pizza hut'
+
+# Semantic tools only
+firecrawl search alexandria 'pizza hut'
+
+# Categories → providers → tools → contract
+firecrawl list
+firecrawl list restaurants --category
+firecrawl list pizzahut-com
 firecrawl list pizzahut-com restaurants/store --pretty
-firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<returned-store-number>"}'
+
+# Execute a tool
+firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<store_number>"}'
 ```
 
 Normal search includes web results and tool matches; `search alexandria` searches tools only. `list <provider> <capability> --pretty` shows the selected contract; use `--json` for machine-readable output. To browse progressively, use `list`, then `list <category> --category`, then `list <provider>`. Search and list do not execute the selected provider tool. Read only the contracts needed for the task; use returned identifiers rather than guessing them.
 
-## Alexandria tools and large results
+## Execution and large results
 
-Inspect a selected contract with `firecrawl list <provider> <capability> --pretty`, then execute `firecrawl scrape <provider/capability> --options '<JSON>'`. URL scraping does not execute provider tools automatically. Use exact discovered input fields and resolve record IDs with lookup tools rather than inventing them. Check each `data.alexandria[]` result for errors, not just the outer success flag.
+URL scraping does not execute provider tools automatically. Use exact discovered input fields and resolve record IDs with lookup tools rather than inventing them. Check each `data.alexandria[]` result for errors, not just the outer success flag.
 
 If the client reports an output/context limit, the upstream request may have succeeded. Preserve the request or scrape ID and recover the retained result before repeating the provider call. For large datasets and PDFs, save output with `--json -o` when a local filesystem is available and inspect bounded sections. Where remote processing is preferable, use `firecrawl scrape firecrawl/bash` to select from a retained result. Read [large-result recovery](references/large-results.md) for IDs, command examples, expiry, and errors. This is explicit recovery, not automatic overflow detection.
 

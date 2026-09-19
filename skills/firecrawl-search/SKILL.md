@@ -1,7 +1,7 @@
 ---
 name: firecrawl-search
 description: |
-  Web search with full page content. Use when no URL is known: finding sources, articles, or news. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
+  Find web sources and structured-data tools for a task. Default search combines web results, semantic tools, and domain matches; inspect selected contracts with list and execute through scrape. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
@@ -24,7 +24,7 @@ firecrawl search "your query" --scrape -o .firecrawl/scraped.json --json
 firecrawl search "your query" --sources news --tbs qdr:d -o .firecrawl/news.json --json
 ```
 
-Run `firecrawl search --help` for the full option list.
+Use `firecrawl search --help` for search options, `firecrawl list --help` for contract browsing, and `firecrawl scrape --help` for execution options.
 
 `--categories developer` weighs the developer index beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
 
@@ -34,9 +34,9 @@ Run `firecrawl search --help` for the full option list.
 
 Search defaults to `web,alexandria` with domain-tool matching on. Preserve the user's location, marketplace, and constraints in the query; do not turn normal research into an artificial tool-discovery query. Inspect `data.web` and `data.tools` from the same response.
 
-A tool match is not executed data. If it fits the task, read its inputs, coverage, and access requirements in the JSON. Displayed pricing is informational, not an extra confirmation gate. Inspect only the selected contract with `firecrawl list <provider> <capability> --pretty`, then execute it with `firecrawl scrape <provider/capability> --options '<input JSON>'` (`--alexandria` remains supported). All provider execution goes through Scrape; `search --scrape` only fetches web result content, not provider tools.
+A tool match is not executed data. If it fits the task, read its inputs, coverage, and access requirements in the JSON. Displayed pricing is informational, not an extra confirmation gate. If the full contract is already in the search result, use it directly. Otherwise inspect only the selected contract with `firecrawl list <provider> <capability> --pretty`, then execute it with `firecrawl scrape <provider/capability> --options '<input JSON>'` (`--alexandria` remains supported). All provider execution goes through Scrape; `search --scrape` only fetches web result content, not provider tools.
 
-Use `find-tools` only for an explicitly requested tool set or a missing contract. It runs the `firecrawl/find-tools` meta tool through Scrape and never executes the tools it discovers. It accepts URLs or catalogue selectors; for “tools that can do X,” first use `search "X" --sources alexandria`, then narrow the returned providers with `find-tools --options '{"providers":["<returned-provider>"],"level":"tools","limit":100}'`.
+Use `list` for category/provider browsing and selected contracts. For a known website, `find-tools <url>` discovers associated tools without executing them. Run `firecrawl find-tools --help` for advanced catalogue selectors; avoid broad expansion unless the task needs it.
 
 If no returned tool covers the country/market/segment or required inputs, continue with ordinary web results. Do not exhaust the catalogue or pay for adjacent tools just to probe coverage. `--sources web` explicitly opts out of Alexandria; `--sources web --domain-tools` retains domain matches only.
 
