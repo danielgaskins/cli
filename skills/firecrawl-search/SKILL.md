@@ -11,6 +11,8 @@ allowed-tools:
 
 Search naturally using the user’s actual question. In the Alexandria beta, default search returns web results plus relevant Alexandria tools, with optional web content scraping.
 
+For Alexandria beta capabilities, replace `firecrawl` in these examples with `npx firecrawl-cli@alexandria`. Keep the user’s stable installation unchanged.
+
 ## Quick start
 
 ```bash
@@ -28,23 +30,39 @@ Run `firecrawl search --help` for the full option list.
 
 `--categories developer` weighs the developer index beside ordinary web results in this same call (no passage control, no index filters). `--categories research` is a website filter, not the paper index. Dedicated skills: [firecrawl-developer-index](../firecrawl-developer-index/SKILL.md) and [firecrawl-research-index](../firecrawl-research-index/SKILL.md).
 
-**Done when:** results are saved under `.firecrawl/`, verified non-empty, processed for the request, and one feedback event is sent within the time window (unless opted out).
+**Done when:** relevant results have been inspected, per-call errors and empty results have been checked, the request has been answered with source links, and feedback is sent within the time window unless opted out.
 
 ## Alexandria in normal search
 
 The beta defaults to `web,alexandria` with domain-tool matching on. Preserve the user's location, marketplace, and constraints in the query; do not turn normal research into an artificial tool-discovery query. Inspect `data.web` and `data.tools` from the same response.
 
-A tool match is not executed data. If it fits the task, read its inputs, coverage, `creditsCost`/`perRecord`, and access requirements in the JSON. Execute it with `firecrawl scrape --alexandria <provider/capability> --options '<input JSON>'`. All provider execution goes through Scrape; `search --scrape` only fetches web result content, not provider tools.
+A tool match is not executed data. If it fits the task, read its inputs, coverage, and access requirements in the JSON. Displayed pricing is informational, not an extra confirmation gate. Inspect only the selected contract with `firecrawl list <provider> <capability> --pretty`, then execute it with `firecrawl scrape <provider/capability> --options '<input JSON>'` (`--alexandria` remains supported). All provider execution goes through Scrape; `search --scrape` only fetches web result content, not provider tools.
 
 Use `find-tools` only for an explicitly requested tool set or a missing contract. It runs the `firecrawl/find-tools` meta tool through Scrape and never executes the tools it discovers. It accepts URLs or catalogue selectors; for “tools that can do X,” first use `search "X" --sources alexandria`, then narrow the returned providers with `find-tools --options '{"providers":["<returned-provider>"],"level":"tools","limit":100}'`.
 
 If no returned tool covers the country/market/segment or required inputs, continue with ordinary web results. Do not exhaust the catalogue or pay for adjacent tools just to probe coverage. `--sources web` explicitly opts out of Alexandria; `--sources web --domain-tools` retains domain matches only.
 
+## Progressive discovery and output handling
+
+```bash
+firecrawl search "pizza hut"
+firecrawl search alexandria "pizza hut"
+firecrawl list
+firecrawl list restaurants --category
+firecrawl list pizzahut-com
+firecrawl list pizzahut-com restaurants/store --pretty
+firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<store_number>"}'
+```
+
+Default beta search combines web results, domain matches and semantic tools; `search alexandria` returns semantic tool matches only. Read the selected contract instead of expanding the entire catalogue. Tool discovery is not execution.
+
+Keep large search responses in `--json -o` output and select the relevant results. If a subsequent provider execution or URL scrape exceeds the agent's output limit, use its retained ID with the [remote Bash recovery instructions](../firecrawl-scrape/references/large-results.md). Search request IDs are not supported Bash inputs. Do not blindly rerun a successful provider because the client could not display its result.
+
 ## Tips
 
 - **`--highlights` on by default:** results are query-relevant excerpts, not full-page snippets. Use `--no-highlights` for the original snippets.
 - **`--scrape` fetches full content** — reuse that content instead of re-scraping result URLs. This saves credits and avoids redundant fetches.
-- Always write results to `.firecrawl/` with `-o` to avoid context window bloat.
+- For large results, use `-o` and bounded local reads when a filesystem is available. Do not dump the full response into context.
 - Use `jq` to extract URLs or titles: `jq -r '.data.web[].url' .firecrawl/search.json`
 - Naming convention: `.firecrawl/search-{query}.json` or `.firecrawl/search-{query}-scraped.json`
 

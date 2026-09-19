@@ -11,6 +11,8 @@ allowed-tools:
 
 Scrape one or more URLs. Returns clean, LLM-optimized markdown. Multiple URLs are scraped concurrently.
 
+For Alexandria beta capabilities, replace `firecrawl` in these examples with `npx firecrawl-cli@alexandria`. Keep the user’s stable installation unchanged.
+
 ## Quick start
 
 ```bash
@@ -36,6 +38,12 @@ firecrawl scrape "https://example.com/pricing" --query "What is the enterprise p
 Run `firecrawl scrape --help` for the full option list.
 
 **Done when:** you have the scraped content — on stdout, in your `-o` file, or under `.firecrawl/` for multi-URL scrapes — and have inspected it with bounded reads (`head`, `grep`) to answer the request.
+
+## Alexandria tools and large results
+
+In the Alexandria beta, inspect a selected contract with `firecrawl list <provider> <capability> --pretty`, then execute `firecrawl scrape <provider/capability> --options '<JSON>'`. URL scraping does not execute provider tools automatically. Use exact discovered input fields and resolve record IDs with lookup tools rather than inventing them. Check each `data.alexandria[]` result for errors, not just the outer success flag.
+
+If the client reports an output/context limit, the upstream request may have succeeded. Preserve the request or scrape ID and recover the retained result before repeating the provider call. For large datasets and PDFs, save output with `--json -o` when a local filesystem is available and inspect bounded sections. Where remote processing is preferable, use `firecrawl scrape firecrawl/bash` to select from a retained result. Read [large-result recovery](references/large-results.md) for IDs, command examples, expiry, and errors. This is explicit recovery, not automatic overflow detection.
 
 ## PDFs and page budgets
 
