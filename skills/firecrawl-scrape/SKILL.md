@@ -37,12 +37,6 @@ Run `firecrawl scrape --help` for the full option list.
 
 **Done when:** you have the scraped content — on stdout, in your `-o` file, or under `.firecrawl/` for multi-URL scrapes — and have inspected it with bounded reads (`head`, `grep`) to answer the request.
 
-## Alexandria tools and large results
-
-In the Alexandria beta, inspect a selected contract with `firecrawl list <provider> <capability> --pretty`, then execute `firecrawl scrape <provider/capability> --options '<JSON>'`. URL scraping does not execute provider tools automatically.
-
-If the client reports an output/context limit, the upstream request may have succeeded. Preserve the request or scrape ID and recover the retained result before repeating the provider call. For large datasets and PDFs, save output with `--json -o` when a local filesystem is available and inspect bounded sections. Where remote processing is preferable, use `firecrawl scrape firecrawl/bash` to select from a retained result. Read [large-result recovery](references/large-results.md) for IDs, command examples, expiry, and errors. This is explicit recovery, not automatic overflow detection.
-
 ## PDFs and page budgets
 
 PDFs cost 1 credit per parsed page. Use `--max-pages` (an integer from 1 to 10000) to limit PDF parsing, especially for large or unknown documents:
