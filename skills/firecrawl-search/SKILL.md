@@ -44,19 +44,19 @@ If no returned tool covers the country/market/segment or required inputs, contin
 
 ```bash
 # Web + domain matching + semantic tools
-firecrawl search 'pizza hut'
+firecrawl search '<user question>'
 
 # Semantic tools only
-firecrawl search alexandria 'pizza hut'
+firecrawl search alexandria '<user question>'
 
 # Categories → providers → tools → contract
 firecrawl list
-firecrawl list restaurants --category
-firecrawl list pizzahut-com
-firecrawl list pizzahut-com restaurants/store --pretty
+firecrawl list <category-id> --category
+firecrawl list <provider-id>
+firecrawl list <provider-id> <capability-id> --pretty
 
 # Execute a tool
-firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<store_number>"}'
+firecrawl scrape <provider-id>/<capability-id> --options '<JSON matching the selected contract>'
 ```
 
 Default search combines web results, domain matches and semantic tools; `search alexandria` returns semantic tool matches only. Read the selected contract instead of expanding the entire catalogue. Tool discovery is not execution.

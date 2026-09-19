@@ -51,19 +51,19 @@ For structured data, search for the task, inspect a matching tool's contract, th
 
 ```bash
 # Web + domain matching + semantic tools
-firecrawl search 'pizza hut'
+firecrawl search '<user question>'
 
 # Semantic tools only
-firecrawl search alexandria 'pizza hut'
+firecrawl search alexandria '<user question>'
 
 # Categories → providers → tools → contract
 firecrawl list
-firecrawl list restaurants --category
-firecrawl list pizzahut-com
-firecrawl list pizzahut-com restaurants/store --pretty
+firecrawl list <category-id> --category
+firecrawl list <provider-id>
+firecrawl list <provider-id> <capability-id> --pretty
 
 # Execute a tool
-firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<store_number>"}'
+firecrawl scrape <provider-id>/<capability-id> --options '<JSON matching the selected contract>'
 ```
 
 Normal search includes web results and tool matches; `search alexandria` searches tools only. `list <provider> <capability> --pretty` shows the selected contract; use `--json` for machine-readable output. To browse progressively, use `list`, then `list <category> --category`, then `list <provider>`. Search and list do not execute the selected provider tool. Read only the contracts needed for the task; use returned identifiers rather than guessing them.

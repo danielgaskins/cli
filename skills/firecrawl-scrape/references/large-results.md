@@ -18,11 +18,11 @@ firecrawl scrape firecrawl/bash --options '{"requestId":"<request-id>","command"
 
 Read the response's `data.alexandria[0].data`: `stdout`, `stderr`, `exitCode`, and `workspaceId`. Check both the API/provider error envelope and command exit code; missing stdout is not an empty successful result.
 
-Reuse that workspace to sample SAM.gov records without another provider execution:
+After inspecting the response shape, reuse that workspace to sample records without another provider execution. These examples apply when the selected tool returns a `records` array:
 
 ```bash
-firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[:3] | map({title, source_url, response_deadline})\" response.json"}'
-firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[3:6] | map({title, source_url, response_deadline})\" response.json"}'
+firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[:3]\" response.json"}'
+firecrawl scrape firecrawl/bash --options '{"workspaceId":"<workspace-id>","command":"jq \".data.alexandria[0].data.records[3:6]\" response.json"}'
 ```
 
 Inspect keys before choosing a record path: providers do not all use `records`. For regular scrape results, `document.md` contains Markdown and `response.json` contains the result:
