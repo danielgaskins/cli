@@ -43,12 +43,19 @@ If no returned tool covers the country/market/segment or required inputs, contin
 ## Progressive discovery and output handling
 
 ```bash
-firecrawl search "pizza hut"
-firecrawl search alexandria "pizza hut"
+# Web + domain matching + semantic tools
+firecrawl search 'pizza hut'
+
+# Semantic tools only
+firecrawl search alexandria 'pizza hut'
+
+# Categories → providers → tools → contract
 firecrawl list
 firecrawl list restaurants --category
 firecrawl list pizzahut-com
 firecrawl list pizzahut-com restaurants/store --pretty
+
+# Execute a tool
 firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<store_number>"}'
 ```
 
