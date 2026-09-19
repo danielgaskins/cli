@@ -961,7 +961,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--highlights',
-      'Return query-relevant highlights for each search result. Highlights are omitted for zero-data-retention searches.'
+      'Return query-relevant highlights for each search result.'
     )
     .option(
       '--no-highlights',

@@ -106,6 +106,7 @@ describe('CLI argv parsing', () => {
       expect(flattened).toContain(
         'Return query-relevant highlights for each search result'
       );
+      expect(flattened).not.toContain('zero-data-retention');
       expect(flattened).toContain('public repositories');
       expect(flattened).toContain('research, pdf, developer');
       expect(flattened).not.toContain('github, research');

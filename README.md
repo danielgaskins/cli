@@ -300,7 +300,7 @@ firecrawl https://example.com --exclude-tags nav,aside,.ad
 
 ### `search` - Search the web
 
-Search the web and optionally scrape content from search results, with query-relevant highlights by default.
+Search the web with query highlights and optionally scrape content from search results.
 
 ```bash
 # Basic search
@@ -370,7 +370,7 @@ firecrawl search "AI data tools"
 # Research a topic with recent results
 firecrawl search "React Server Components" --tbs qdr:m --limit 10
 
-# Answer a programming question from public repositories, issues, merged PRs, READMEs, and docs
+# Answer a programming question from public repositories, GitHub issues, merged PRs, READMEs, and docs
 firecrawl search "web data library" --categories developer --limit 20
 
 # Search and get full content
@@ -382,7 +382,7 @@ firecrawl research search-papers "large language models" --json
 # Narrow web results to research-affiliated websites (not the paper index)
 firecrawl search "large language models" --categories research --json
 
-# Answer a programming question from public repositories, issues, merged PRs, READMEs, and docs
+# Answer a programming question from public repositories, GitHub issues, merged PRs, READMEs, and docs
 firecrawl search "tokio select cancellation safety" --categories developer --json
 
 # Search with location targeting

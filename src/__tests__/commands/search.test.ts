@@ -191,14 +191,14 @@ describe('executeSearch', () => {
 
       await executeSearch({
         query: 'web scraping python',
-        categories: ['developer'],
+        categories: ['pdf'],
       });
 
       expect(mockHttpPost).toHaveBeenCalledWith(
         '/v2/search',
         expect.objectContaining({
           query: 'web scraping python',
-          categories: [{ type: 'developer' }],
+          categories: [{ type: 'pdf' }],
         })
       );
     });
