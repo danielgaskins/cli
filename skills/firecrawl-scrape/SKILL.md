@@ -37,6 +37,27 @@ Run `firecrawl scrape --help` for the full option list.
 
 **Done when:** you have the scraped content — on stdout, in your `-o` file, or under `.firecrawl/` for multi-URL scrapes — and have inspected it with bounded reads (`head`, `grep`) to answer the request.
 
+## Find tools, inspect inputs, and get help
+
+Use the CLI help to check supported options rather than guessing:
+
+```bash
+firecrawl search --help
+firecrawl list --help
+firecrawl scrape --help
+```
+
+For structured data, search for the task, inspect a matching tool's contract, then execute with the exact input fields it declares:
+
+```bash
+firecrawl search "pizza hut stores"
+firecrawl search alexandria "pizza hut stores"
+firecrawl list pizzahut-com restaurants/store --pretty
+firecrawl scrape pizzahut-com/restaurants/store --options '{"store_number":"<returned-store-number>"}'
+```
+
+Normal search includes web results and tool matches; `search alexandria` searches tools only. `list <provider> <capability> --pretty` shows the selected contract; use `--json` for machine-readable output. To browse progressively, use `list`, then `list <category> --category`, then `list <provider>`. Search and list do not execute the selected provider tool. Read only the contracts needed for the task; use returned identifiers rather than guessing them.
+
 ## Alexandria tools and large results
 
 Inspect a selected contract with `firecrawl list <provider> <capability> --pretty`, then execute `firecrawl scrape <provider/capability> --options '<JSON>'`. URL scraping does not execute provider tools automatically. Use exact discovered input fields and resolve record IDs with lookup tools rather than inventing them. Check each `data.alexandria[]` result for errors, not just the outer success flag.
