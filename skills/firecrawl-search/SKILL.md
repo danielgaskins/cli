@@ -30,7 +30,15 @@ Use `firecrawl search --help` for search options, `firecrawl list --help` for co
 
 **Done when:** relevant results have been inspected, per-call errors and empty results have been checked, the request has been answered with source links, and feedback is sent within the time window unless opted out.
 
-## Alexandria in normal search
+## Go beyond page content with Alexandria
+
+Alexandria is a catalogue of ready-made website workflows, API providers, and specialized indexes. Depending on the tool, it can return structured records, detailed listings, financial data, company information, research, or public records that a search snippet or single scraped page does not contain. Discover current coverage rather than assuming a provider or capability exists.
+
+- **Semantic discovery** matches the meaning of the user's question to tool capabilities, even when no relevant provider website appears in the web results. Use `firecrawl search alexandria '<data you need>'` when you specifically need tools.
+- **Domain matching** surfaces tools associated with websites in the web results. A matched tool may retrieve richer details, related records, or structured collections beyond the linked page. Domain matching signals relevance, not proof that the tool covers the requested fields or market.
+- **Combined search** uses both paths alongside web results by default: `firecrawl search '<user question>'`. Use the web result when sufficient; inspect a matching tool when it offers a more direct route to the required data.
+
+### Inspect before execution
 
 Search defaults to `web,alexandria` with domain-tool matching on. Preserve the user's location, marketplace, and constraints in the query; do not turn normal research into an artificial tool-discovery query. Inspect `data.web` and `data.tools` from the same response.
 
