@@ -10,7 +10,7 @@ allowed-tools:
 
 Search naturally using the user’s actual question. Default search returns web results plus relevant Alexandria tools, with optional web content scraping.
 
-For structured records, filterable listings, transcripts, or datasets, first check `firecrawl search alexandria '<data you need>'` for a suitable workflow or data provider. For a known website, use `firecrawl find-tools <url>`. Inspect a selected contract with `firecrawl list <provider> <capability> --pretty` before executing it through `scrape`; reuse a complete contract already returned by discovery. If no suitable tool exists, continue with web search or Agent. Use ordinary `search` for web research and URL `scrape` for a known page.
+Choose the route by the requested output: use web search for sources, URL scrape for page text, and tool discovery for structured records or filtered collections. For a named website, check `firecrawl find-tools <url>`; otherwise use `firecrawl search alexandria '<data you need>'`. Keep discovery compact, inspect only the best matching contract with `firecrawl list <provider> <capability> --pretty`, and execute it through `scrape`. Reuse contracts already loaded. If the selected tool cannot cover the request, use web search or Agent rather than repeatedly expanding the catalogue.
 
 ## Quick start
 

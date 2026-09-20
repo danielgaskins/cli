@@ -10,7 +10,7 @@ allowed-tools:
 
 Read a URL for page content, or execute a selected provider tool for structured data. Discover tools with `search` and inspect their inputs with `list` before execution. Multiple URLs can be scraped concurrently.
 
-For structured datasets, first check for a suitable workflow or data provider using the [search skill](../firecrawl-search/SKILL.md). Read a known page directly; reuse a selected contract instead of repeating discovery.
+For structured records or filtered collections, check domain tools for the named website using the [search skill](../firecrawl-search/SKILL.md) before scraping a series of pages. For page text, scrape the URL directly. Load only the selected contract and reuse it across calls.
 
 ## Quick start
 
