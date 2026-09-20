@@ -70,11 +70,18 @@ firecrawl scrape <provider-id>/<capability-id> --options '<JSON matching the sel
 
 Normal search includes web results and tool matches; `search alexandria` searches tools only. `list <provider> <capability> --pretty` shows the selected contract; use `--json` for machine-readable output. To browse progressively, use `list`, then `list <category> --category`, then `list <provider>`. Search and list do not execute the selected provider tool. Read only the contracts needed for the task; use returned identifiers rather than guessing them.
 
+Read the expanded contract before building inputs or parsing results:
+
+- `required: true` requires that input; each `requiresOneOf` group requires at least one member, not all of them.
+- Selected-contract inspection already requests examples. Read the singular `example.request` and `example.response` when present; an empty request can be valid for tools with optional inputs.
+- `response.key` identifies the records field inside `data.alexandria[i].data`; an empty key means that data object itself. Do not assume every provider returns `records`.
+- Provider pagination differs from catalogue `next`: use the contract's continuation input and the returned page/cursor, preserve filters, and stop at its exhaustion signal. `paginated: true` alone does not specify that mapping.
+
 ## Execution and large results
 
 URL scraping does not execute provider tools automatically. Use exact discovered input fields and resolve record IDs with lookup tools rather than inventing them. Check each `data.alexandria[]` result for errors, not just the outer success flag.
 
-If the client reports an output/context limit, the upstream request may have succeeded. Preserve the request or scrape ID and recover the retained result before repeating the provider call. For large datasets and PDFs, save output with `--json -o` when a local filesystem is available and inspect bounded sections. Where remote processing is preferable, use `firecrawl scrape firecrawl/bash` to select from a retained result. Read [large-result recovery](references/large-results.md) for IDs, command examples, expiry, and errors. This is explicit recovery, not automatic overflow detection.
+If the client reports an output/context limit, the upstream request may have succeeded. Preserve the request or scrape ID and recover the retained result before repeating the provider call. For large datasets and PDFs, save output with `--json -o` when a local filesystem is available and inspect bounded sections with `jq` or other file tools. Keep stderr separate from JSON stdout; do not merge streams with `2>&1` when piping to a JSON parser. Where remote processing is preferable, use `firecrawl scrape firecrawl/bash` to select from a retained result. Read [large-result recovery](references/large-results.md) for IDs, command examples, expiry, and errors. This is explicit recovery, not automatic overflow detection.
 
 ## PDFs and page budgets
 
