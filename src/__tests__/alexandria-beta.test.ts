@@ -1017,3 +1017,23 @@ it('falls back to category browsing after an unknown provider, but preserves oth
   expect((await cli(['list', 'shopping', '--json'])).code).toBe(1);
   expect(requests).toHaveLength(1);
 });
+
+it('forwards explicit discovery detail and rejects unknown modes before requesting', async () => {
+  response = { success: true, data: { web: [], tools: [] } };
+  for (const detail of ['summary', 'full']) {
+    const result = await cli([
+      'search',
+      'records',
+      '--tool-detail',
+      detail,
+      '--json',
+    ]);
+    expect(result.code).toBe(0);
+    expect(requests.at(-1)?.body.toolDetail).toBe(detail);
+  }
+  const count = requests.length;
+  expect(
+    (await cli(['search', 'records', '--tool-detail', 'invalid'])).code
+  ).not.toBe(0);
+  expect(requests).toHaveLength(count);
+});

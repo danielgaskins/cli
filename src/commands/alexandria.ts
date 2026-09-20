@@ -262,5 +262,11 @@ export function addAlexandriaScrapeOptions(command: Command): void {
         '--domain-tools',
         'Discover related tools alongside URL content; does not execute them'
       )
+    )
+    .addOption(
+      new Option(
+        '--tool-detail <detail>',
+        'Tool discovery detail; summaries by default, full includes contracts'
+      ).choices(['summary', 'full'])
     );
 }

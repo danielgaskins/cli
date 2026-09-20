@@ -1057,6 +1057,7 @@ function createSearchCommand(): Command {
 
       const searchOptions = {
         query,
+        toolDetail: options.toolDetail,
         domainTools:
           options.domainTools ??
           (!alexandriaOnly && sources.includes('alexandria')),
@@ -1082,6 +1083,12 @@ function createSearchCommand(): Command {
       await handleSearchCommand(searchOptions);
     });
 
+  searchCmd.addOption(
+    new Option(
+      '--tool-detail <detail>',
+      'Tool discovery detail; summaries by default, full includes contracts'
+    ).choices(['summary', 'full'])
+  );
   searchCmd.option(
     '--domain-tools',
     'Include tools for domains in web results (on by default with Alexandria)'

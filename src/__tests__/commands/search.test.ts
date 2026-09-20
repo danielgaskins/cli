@@ -62,6 +62,21 @@ describe('executeSearch', () => {
   });
 
   describe('API call generation', () => {
+    it.each(['summary', 'full'] as const)(
+      'forwards %s tool detail',
+      async (toolDetail) => {
+        mockHttpPost.mockResolvedValue(mockSearchResponse({ tools: [] }));
+        await executeSearch({
+          query: 'records',
+          sources: ['alexandria'],
+          toolDetail,
+        });
+        expect(mockHttpPost).toHaveBeenCalledWith(
+          '/v2/search',
+          expect.objectContaining({ toolDetail })
+        );
+      }
+    );
     it('should call /v2/search with correct query and default options', async () => {
       mockHttpPost.mockResolvedValue(
         mockSearchResponse({

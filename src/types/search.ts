@@ -9,6 +9,7 @@ export type SearchCategory = 'github' | 'research' | 'pdf' | 'developer';
 
 export interface SearchOptions {
   domainTools?: boolean;
+  toolDetail?: 'summary' | 'full';
   /** Search query (required) */
   query: string;
   /** API key for Firecrawl */
