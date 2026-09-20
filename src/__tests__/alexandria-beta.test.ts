@@ -669,6 +669,8 @@ it('presents tools compactly after web results while JSON preserves full contrac
       provider: tool.provider,
       capability: tool.capability,
       description: tool.description,
+      creditsCost: tool.creditsCost,
+      perRecord: tool.perRecord,
     },
   ];
   const compact = await cli([
@@ -683,6 +685,7 @@ it('presents tools compactly after web results while JSON preserves full contrac
     'Inspect: firecrawl list <provider> <capability> --pretty'
   );
   expect(compact.stdout).not.toContain('Cost:');
+  expect(compact.stdout).toContain(`${tool.description}\n\nInspect:`);
   expect(requests.every((request) => request.url === '/v2/search')).toBe(true);
 });
 

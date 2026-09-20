@@ -296,6 +296,7 @@ function formatSearchReadable(
         lines.push(`  ${address ?? tool.id ?? 'Tool'}`);
         if (typeof tool.description === 'string')
           lines.push(`    ${clipPassage(tool.description)}`);
+        lines.push('');
         continue;
       }
       const title = tool.label ?? tool.name ?? address ?? tool.id ?? 'Tool';
