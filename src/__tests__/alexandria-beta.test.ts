@@ -461,7 +461,7 @@ it('preserves mixed search results, tools and billing metadata', async () => {
   expect(readable.stdout).toContain('=== Alexandria Tools ===');
   expect(readable.stdout).toContain('series/observations');
   expect(readable.stdout).toContain(
-    'Inspect: npx firecrawl-cli@alexandria list fred/series/observations --json'
+    'Inspect: firecrawl list <provider> <capability> --pretty'
   );
 });
 
@@ -655,7 +655,12 @@ it('presents tools compactly after web results while JSON preserves full contrac
       tools: [tool],
     },
   };
-  const readable = await cli(['search', 'GDP growth']);
+  const readable = await cli([
+    'search',
+    'GDP growth',
+    '--tool-detail',
+    'summary',
+  ]);
   expect(readable.stdout.indexOf('GDP report')).toBeLessThan(
     readable.stdout.indexOf('=== Alexandria Tools ===')
   );
@@ -673,18 +678,14 @@ it('presents tools compactly after web results while JSON preserves full contrac
       perRecord: tool.perRecord,
     },
   ];
-  const compact = await cli([
-    'search',
-    'GDP growth',
-    '--tool-detail',
-    'compact',
-  ]);
+  const compact = await cli(['search', 'GDP growth']);
   expect(compact.stdout).toContain('fred/series/observations');
   expect(compact.stdout).toContain(tool.description);
   expect(compact.stdout).toContain(
     'Inspect: firecrawl list <provider> <capability> --pretty'
   );
   expect(compact.stdout).not.toContain('Cost:');
+  expect(requests.at(-1)?.body.toolDetail).toBe('compact');
   expect(compact.stdout).toContain(`${tool.description}\n\nInspect:`);
   expect(requests.every((request) => request.url === '/v2/search')).toBe(true);
 });

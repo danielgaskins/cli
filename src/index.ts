@@ -1086,7 +1086,7 @@ function createSearchCommand(): Command {
   searchCmd.addOption(
     new Option(
       '--tool-detail <detail>',
-      'Tool detail: compact identities/descriptions, summary metadata (default), full contracts'
+      'Tool detail: compact identities/descriptions (default), summary metadata, full contracts'
     ).choices(['compact', 'summary', 'full'])
   );
   searchCmd.option(

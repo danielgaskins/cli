@@ -99,6 +99,7 @@ describe('executeSearch', () => {
         query: 'test query',
         limit: 5,
         integration: 'cli',
+        toolDetail: 'compact',
       });
     });
 
@@ -435,6 +436,7 @@ describe('executeSearch', () => {
         query: 'comprehensive test',
         limit: 20,
         integration: 'cli',
+        toolDetail: 'compact',
         sources: [{ type: 'web' }, { type: 'news' }],
         categories: [{ type: 'github' }],
         tbs: 'qdr:w',
