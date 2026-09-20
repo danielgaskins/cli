@@ -12,6 +12,8 @@ Search naturally using the user’s actual question. Default search returns web 
 
 For structured records without a named source, use semantic tool discovery to choose a provider. Inspect only the best matching contract before execution. If no match covers the request, continue with ordinary web search.
 
+Reuse discovery results and contracts already read during this task. Inspect another contract only when the current one cannot answer the request or its response explicitly points to a necessary next step. If a call fails, use its error to make a targeted correction; avoid repeating unchanged discovery or contract requests. Report partial results when the available tools do not cover the remaining fields.
+
 ## Quick start
 
 ```bash
