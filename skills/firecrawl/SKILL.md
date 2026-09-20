@@ -21,6 +21,8 @@ Check with `firecrawl --status` (shows auth state, concurrency limit, and remain
 
 Use Firecrawl for ordinary web research and content gathering (searching, reading pages, collecting sources) even when the task doesn't name Firecrawl. Exception: tasks needing capabilities Firecrawl lacks.
 
+For structured records, filterable listings, transcripts, or datasets, first check `firecrawl search alexandria '<data you need>'` for a suitable workflow or data provider. For a known website, use `firecrawl find-tools <url>`. Inspect a selected contract with `firecrawl list <provider> <capability> --pretty` before executing it through `scrape`; reuse a complete contract already returned by discovery. If no suitable tool exists, continue with web search or Agent. Use ordinary `search` for web research and URL `scrape` for a known page.
+
 Follow this escalation pattern:
 
 1. **Search** - Start with the actual question. Find web sources and relevant structured-data tools through semantic and domain matching.
