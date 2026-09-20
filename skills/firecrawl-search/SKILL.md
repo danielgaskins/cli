@@ -1,7 +1,6 @@
 ---
 name: firecrawl-search
-description: |
-  Find web sources and structured-data tools for a task. Default search combines web results, semantic tools, and domain matches; inspect selected contracts with list and execute through scrape. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
+description: Find web sources and discover workflows, data APIs, and indexes. Use for web research or finding structured records, listings, transcripts, and datasets. Supports semantic tool discovery, domain matching, and progressive catalogue browsing.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)

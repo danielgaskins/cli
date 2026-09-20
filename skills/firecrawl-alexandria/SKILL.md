@@ -1,6 +1,6 @@
 ---
 name: firecrawl-alexandria
-description: Find an efficient path to structured data with ready-made workflows and provider tools. Use for records, listings, financial data, and other tasks where a purpose-built workflow can save browsing and parsing; follow the search and scrape skills to discover and execute the right tool.
+description: Find a direct path to structured data through ready-made workflows, data APIs, and indexes. Follow the search skill to discover and inspect tools, then the scrape skill to execute them.
 ---
 
 # A direct path to structured data

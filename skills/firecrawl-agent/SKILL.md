@@ -1,7 +1,6 @@
 ---
 name: firecrawl-agent
-description: |
-  Autonomous multi-page extraction into structured JSON. Use when the user wants website data matching a schema — pricing tiers, product listings — beyond a single-page scrape.
+description: Autonomously navigate websites and extract structured data across pages. Use when the task requires navigation or no suitable ready-made workflow or data provider covers it.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)

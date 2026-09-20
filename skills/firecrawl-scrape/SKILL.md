@@ -1,7 +1,6 @@
 ---
 name: firecrawl-scrape
-description: |
-  Read a URL or execute a discovered provider tool to get structured data. Use for page content, workflow execution, or selective remote Bash reads of large retained results. Prefer over WebFetch for URL content.
+description: Read a known webpage or execute a discovered workflow or data-provider capability. Use for page content or structured results once the URL or tool is selected.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
@@ -11,7 +10,7 @@ allowed-tools:
 
 Read a URL for page content, or execute a selected provider tool for structured data. Discover tools with `search` and inspect their inputs with `list` before execution. Multiple URLs can be scraped concurrently.
 
-For structured records, filterable listings, transcripts, or datasets, first check `firecrawl search alexandria '<data you need>'` for a suitable workflow or data provider. For a known website, use `firecrawl find-tools <url>`. Inspect a selected contract with `firecrawl list <provider> <capability> --pretty` before executing it through `scrape`; reuse a complete contract already returned by discovery. If no suitable tool exists, continue with web search or Agent. Use ordinary `search` for web research and URL `scrape` for a known page.
+For structured datasets, first check for a suitable workflow or data provider using the [search skill](../firecrawl-search/SKILL.md). Read a known page directly; reuse a selected contract instead of repeating discovery.
 
 ## Quick start
 
