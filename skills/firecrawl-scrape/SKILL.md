@@ -47,6 +47,8 @@ firecrawl list --help
 firecrawl scrape --help
 ```
 
+Domain discovery with `--domain-tools` returns compact summaries by default. Add `--tool-detail full` for contracts upfront, or inspect one selected tool with `list` as shown below.
+
 For structured data, search for the task, inspect a matching tool's contract, then execute with the exact input fields it declares:
 
 ```bash
@@ -99,5 +101,3 @@ The cap applies to each PDF, not the whole command or total credits. Extra forma
 - [firecrawl-interact](../firecrawl-interact/SKILL.md) — when scrape can't get the content, use `interact` to click, fill forms, etc.
 - [firecrawl-download](../firecrawl-download/SKILL.md) — bulk download an entire site to local files
 - [firecrawl-build-scrape](https://github.com/firecrawl/skills/tree/main/skills/build/firecrawl-build-scrape) — building scrape into an app instead of running it here
-
-Domain tool discovery returns compact summaries by default. Use `--tool-detail full` with `--domain-tools` for contracts upfront, or `firecrawl list <provider> <capability> --pretty` to inspect one selected tool before execution.

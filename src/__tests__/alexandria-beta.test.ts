@@ -1037,3 +1037,43 @@ it('forwards explicit discovery detail and rejects unknown modes before requesti
   ).not.toBe(0);
   expect(requests).toHaveLength(count);
 });
+
+it('forwards URL scrape discovery detail and rejects invalid combinations locally', async () => {
+  response = { success: true, data: { markdown: 'Example', tools: [] } };
+  for (const detail of ['summary', 'full']) {
+    const result = await cli([
+      'scrape',
+      'https://example.com',
+      '--domain-tools',
+      '--tool-detail',
+      detail,
+      '--json',
+    ]);
+    expect(result.code).toBe(0);
+    expect(requests.at(-1)?.body).toMatchObject({
+      url: 'https://example.com',
+      domainTools: true,
+      toolDetail: detail,
+    });
+  }
+  const count = requests.length;
+  for (const args of [
+    [
+      'scrape',
+      'https://example.com',
+      '--domain-tools',
+      '--tool-detail',
+      'invalid',
+    ],
+    [
+      'scrape',
+      '--alexandria',
+      'sample/records/search',
+      '--tool-detail',
+      'full',
+    ],
+    ['scrape', 'sample/records/search', '--tool-detail', 'summary'],
+  ])
+    expect((await cli(args)).code).not.toBe(0);
+  expect(requests).toHaveLength(count);
+});
