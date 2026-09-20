@@ -292,6 +292,12 @@ function formatSearchReadable(
         typeof tool.provider === 'string' && typeof tool.capability === 'string'
           ? `${tool.provider}/${tool.capability}`
           : undefined;
+      if (options.toolDetail === 'compact') {
+        lines.push(`  ${address ?? tool.id ?? 'Tool'}`);
+        if (typeof tool.description === 'string')
+          lines.push(`    ${clipPassage(tool.description)}`);
+        continue;
+      }
       const title = tool.label ?? tool.name ?? address ?? tool.id ?? 'Tool';
       lines.push(String(title));
       if (address) {
@@ -311,7 +317,9 @@ function formatSearchReadable(
       lines.push('');
     }
     lines.push(
-      'Discovery only. Inspect inputs, coverage and access in --json output.',
+      options.toolDetail === 'compact'
+        ? 'Inspect: firecrawl list <provider> <capability> --pretty'
+        : 'Discovery only. Inspect inputs, coverage and access in --json output.',
       'Use find-tools for tool sets or missing contracts; execute selected tools with scrape --alexandria <provider/capability> --options <json>.',
       ''
     );

@@ -266,7 +266,7 @@ export function addAlexandriaScrapeOptions(command: Command): void {
     .addOption(
       new Option(
         '--tool-detail <detail>',
-        'Tool discovery detail; summaries by default, full includes contracts'
-      ).choices(['summary', 'full'])
+        'Tool detail: compact identities/descriptions, summary metadata (default), full contracts'
+      ).choices(['compact', 'summary', 'full'])
     );
 }

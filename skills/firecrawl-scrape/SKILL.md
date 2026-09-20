@@ -47,7 +47,7 @@ firecrawl list --help
 firecrawl scrape --help
 ```
 
-Domain discovery with `--domain-tools` returns compact summaries by default. Add `--tool-detail full` for contracts upfront, or inspect one selected tool with `list` as shown below.
+Domain discovery with `--domain-tools` returns tool summaries by default. Add `--tool-detail full` for contracts upfront, or inspect one selected tool with `list` as shown below. Use `--tool-detail compact` for only provider, capability and description; inspect by those two IDs with `list`. Summary remains the default. Prefer full when several related contracts will be needed immediately.
 
 For structured data, search for the task, inspect a matching tool's contract, then execute with the exact input fields it declares:
 

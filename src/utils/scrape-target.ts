@@ -8,7 +8,7 @@ type ScrapeTargetOptions = {
   options?: string[];
   requestId?: string;
   domainTools?: boolean;
-  toolDetail?: 'summary' | 'full';
+  toolDetail?: 'compact' | 'summary' | 'full';
 };
 
 function isPositionalFormat(value: string): boolean {

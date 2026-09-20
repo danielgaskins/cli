@@ -62,7 +62,7 @@ describe('executeSearch', () => {
   });
 
   describe('API call generation', () => {
-    it.each(['summary', 'full'] as const)(
+    it.each(['compact', 'summary', 'full'] as const)(
       'forwards %s tool detail',
       async (toolDetail) => {
         mockHttpPost.mockResolvedValue(mockSearchResponse({ tools: [] }));

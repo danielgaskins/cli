@@ -664,6 +664,25 @@ it('presents tools compactly after web results while JSON preserves full contrac
   expect(readable.stdout).not.toContain('EXAMPLE_PAYLOAD');
   const json = await cli(['search', 'GDP growth', '--json']);
   expect(JSON.parse(json.stdout).data.tools).toEqual([tool]);
+  response.data.tools = [
+    {
+      provider: tool.provider,
+      capability: tool.capability,
+      description: tool.description,
+    },
+  ];
+  const compact = await cli([
+    'search',
+    'GDP growth',
+    '--tool-detail',
+    'compact',
+  ]);
+  expect(compact.stdout).toContain('fred/series/observations');
+  expect(compact.stdout).toContain(tool.description);
+  expect(compact.stdout).toContain(
+    'Inspect: firecrawl list <provider> <capability> --pretty'
+  );
+  expect(compact.stdout).not.toContain('Cost:');
   expect(requests.every((request) => request.url === '/v2/search')).toBe(true);
 });
 
@@ -1020,7 +1039,7 @@ it('falls back to category browsing after an unknown provider, but preserves oth
 
 it('forwards explicit discovery detail and rejects unknown modes before requesting', async () => {
   response = { success: true, data: { web: [], tools: [] } };
-  for (const detail of ['summary', 'full']) {
+  for (const detail of ['compact', 'summary', 'full']) {
     const result = await cli([
       'search',
       'records',
@@ -1040,7 +1059,7 @@ it('forwards explicit discovery detail and rejects unknown modes before requesti
 
 it('forwards URL scrape discovery detail and rejects invalid combinations locally', async () => {
   response = { success: true, data: { markdown: 'Example', tools: [] } };
-  for (const detail of ['summary', 'full']) {
+  for (const detail of ['compact', 'summary', 'full']) {
     const result = await cli([
       'scrape',
       'https://example.com',
