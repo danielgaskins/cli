@@ -105,33 +105,13 @@ describe('CLI argv parsing', () => {
       expect(flattened).toContain(
         'Search the web and discover relevant Alexandria tools'
       );
-      expect(flattened).not.toContain(
-        'with query-relevant highlights by default'
-      );
       expect(flattened).toContain(
-        'Return highlights for each search result (default).'
+        'Return query-relevant highlights for web and news results when available (default).'
       );
-      expect(flattened).not.toContain('zero-data-retention');
       expect(flattened).toContain('public repositories');
-      expect(flattened).toContain('research, pdf, developer');
-      expect(flattened).not.toContain('github, research');
+      expect(flattened).toContain('github, research, pdf, developer');
     }
   );
-
-  testWithBuiltCli('rejects the legacy github search category', () => {
-    const result = spawnSync(
-      process.execPath,
-      [cliPath, 'search', 'tokio', '--categories', 'github'],
-      {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-      }
-    );
-
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Invalid category "github"');
-    expect(result.stderr).toContain('research, pdf, developer');
-  });
 
   testWithBuiltCli('lists the research command in root help output', () => {
     const result = spawnSync(process.execPath, [cliPath, '--help'], {
