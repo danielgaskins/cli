@@ -1,7 +1,7 @@
 ---
 name: firecrawl-search
 description: |
-  Web search with query-relevant page excerpts and optional full-page content. Use to find sources, articles, news, and current information. If excerpts are insufficient, use firecrawl-scrape to read relevant result URLs.
+  Web search with query-relevant page excerpts and optional full-page content. Use to find sources, articles, news, and current information.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
