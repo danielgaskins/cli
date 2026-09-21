@@ -1,7 +1,7 @@
 ---
 name: firecrawl-search
 description: |
-  Web search with full page content. Use when no URL is known: finding sources, articles, or news. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
+  Web search with query-relevant page excerpts and optional full-page content. Use when no URL is known: finding sources, articles, or news. For papers use firecrawl-research-index; for library, API, error, or bug questions use firecrawl-developer-index.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)

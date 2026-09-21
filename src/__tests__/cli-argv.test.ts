@@ -103,10 +103,10 @@ describe('CLI argv parsing', () => {
       expect(result.status).toBe(0);
       const flattened = result.stdout.replace(/\s+/g, ' ');
       expect(flattened).toContain(
-        'Search the web and discover relevant Alexandria tools'
+        'Search the web with query-relevant highlights and discover relevant Alexandria tools'
       );
       expect(flattened).toContain(
-        'Return query-relevant highlights for web and news results when available (default).'
+        'Return query-relevant page excerpts for web and news results when available (default).'
       );
       expect(flattened).toContain('public repositories');
       expect(flattened).toContain('research, pdf, developer');
