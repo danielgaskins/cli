@@ -109,9 +109,25 @@ describe('CLI argv parsing', () => {
         'Return query-relevant highlights for web and news results when available (default).'
       );
       expect(flattened).toContain('public repositories');
-      expect(flattened).toContain('github, research, pdf, developer');
+      expect(flattened).toContain('research, pdf, developer');
+      expect(flattened).not.toContain('github, research');
     }
   );
+
+  testWithBuiltCli('rejects the github search category', () => {
+    const result = spawnSync(
+      process.execPath,
+      [cliPath, 'search', 'tokio', '--categories', 'github'],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      }
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Invalid category "github"');
+    expect(result.stderr).toContain('research, pdf, developer');
+  });
 
   testWithBuiltCli('lists the research command in root help output', () => {
     const result = spawnSync(process.execPath, [cliPath, '--help'], {

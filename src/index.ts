@@ -933,7 +933,7 @@ function createSearchCommand(): Command {
     )
     .option(
       '--categories <categories>',
-      'Comma-separated categories to filter: github, research, pdf, developer (research filters web results to research-affiliated websites -- it is NOT the paper index; for papers use `firecrawl research search-papers`. developer searches an index of public repositories, GitHub issues, merged PRs, READMEs, and docs)'
+      'Comma-separated categories to filter: research, pdf, developer (research filters web results to research-affiliated websites -- it is NOT the paper index; for papers use `firecrawl research search-papers`. developer searches an index of public repositories, GitHub issues, merged PRs, READMEs, and docs)'
     )
     .option(
       '--tbs <value>',
@@ -1036,7 +1036,7 @@ function createSearchCommand(): Command {
           .map((c: string) => c.trim().toLowerCase()) as SearchCategory[];
 
         // Validate categories
-        const validCategories = ['github', 'research', 'pdf', 'developer'];
+        const validCategories = ['research', 'pdf', 'developer'];
         for (const category of categories) {
           if (!validCategories.includes(category)) {
             console.error(
