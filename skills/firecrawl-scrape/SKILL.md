@@ -1,7 +1,7 @@
 ---
 name: firecrawl-scrape
 description: |
-  Extract a URL's content as clean markdown, including JS-rendered pages. Use whenever the user provides a URL and wants its content; prefer over WebFetch.
+  Extract content from a known URL as clean markdown, including JS-rendered pages. Use to read a supplied page or search result. Use firecrawl-search when additional web sources are needed.
 allowed-tools:
   - Bash(firecrawl *)
   - Bash(npx firecrawl-cli *)
