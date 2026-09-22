@@ -79,7 +79,7 @@ const DEFAULT_API_URL = 'https://api.firecrawl.dev';
  */
 export function isCustomApiUrl(apiUrl?: string): boolean {
   const url = apiUrl || globalConfig.apiUrl;
-  return !!url && url !== DEFAULT_API_URL;
+  return !!url && url.replace(/\/+$/, '') !== DEFAULT_API_URL;
 }
 
 /**
