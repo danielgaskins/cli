@@ -96,6 +96,9 @@ The cap applies to each PDF, not the whole command or total credits. Extra forma
 
 ## Tips
 
+- **Charts can keep their data outside markdown.** If a chart's values are missing, try `firecrawl scrape "<url>" --format rawHtml -o .firecrawl/page.html` and inspect embedded JSON or chart data before estimating from an image. Verify the series labels, units and dates.
+- **A loading shell is not a complete result.** If the response only says "Loading..." or omits the requested filter results, try `--wait-for` or follow the [interact skill](../firecrawl-interact/SKILL.md) to render the page and use its filters. Check that the requested records actually loaded before reporting completion.
+- **Respect each host's limits.** Your account concurrency limit is not a site's safe request rate. Start with a small number of requests to one host; if it returns 429s, repeated 403s or timeouts, reduce concurrency and back off rather than repeating the same parallel batch. Honor `Retry-After` when available; stop and report persistent blocking.
 - **Prefer plain scrape over `--query`.** Scrape to a file, then use `grep`, `head`, or read the markdown directly — you can search and reason over the full content yourself. Use `--query` only when you want a single targeted answer without saving the page (costs 5 extra credits).
 - **Scrape handles static pages and JS-rendered SPAs.** Escalate to `interact` when the page needs interaction (clicks, form fills, pagination) or scrape misses content.
 - Multiple URLs are scraped concurrently — check `firecrawl --status` for your concurrency limit. This mode saves markdown only and ignores `-o`; other requested formats are dropped. If markdown wasn't requested, the whole JSON response is written into the `.md` file.

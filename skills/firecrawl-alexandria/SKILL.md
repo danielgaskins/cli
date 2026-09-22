@@ -12,6 +12,12 @@ Alexandria brings ready-made website workflows, API providers, and specialized i
 
 Use ordinary web results when they answer the question; use a provider tool when its coverage and inputs fit.
 
+## Check execution and coverage
+
+Finding a tool or reading its contract does not execute it. When the user requests Alexandria results, execute a suitable capability within the authorized scope and inspect its result before claiming it answered the task. If execution is blocked, say why; if you use web research instead, disclose the substitution. In the final answer, distinguish tools discovered, tools actually executed, and results obtained from other sources. Do not count an unexecuted provider as a success or failure of its data.
+
+For hiring research, company headquarters and job locations are different fields. YC company search locations describe the company, so do not exclude a hiring company solely because its headquarters are blank or outside the requested city. Inspect its jobs capability and filter on each posting's location; report missing or ambiguous locations instead of inferring them from headquarters.
+
 ## Send feedback after every Alexandria task
 
 Alexandria coverage grows from what agents report. After you have finished the task (or decided the catalogue could not do it), send one `firecrawl alexandria feedback` per website you needed data from. It is free: no job ID, no time window, no credit refund. **Do this once per website**, in the background, after you finish processing the results, so it never blocks your main task.
