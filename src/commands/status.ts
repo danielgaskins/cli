@@ -178,7 +178,23 @@ function formatNumber(num: number): string {
 /**
  * Check local repo status for .gitignore and .firecrawl
  */
-async function getLocalStatus(cwd: string): Promise<LocalStatus> {
+async function findLocalStatusDirectory(cwd: string): Promise<string> {
+  let current = path.resolve(cwd);
+  while (true) {
+    const [cache, git] = await Promise.all([
+      fs.stat(path.join(current, '.firecrawl')).catch(() => null),
+      fs.stat(path.join(current, '.git')).catch(() => null),
+    ]);
+    // A nested repository must not inherit its parent's cache or ignore rules.
+    if (cache?.isDirectory() || git) return current;
+    const parent = path.dirname(current);
+    if (parent === current) return cwd;
+    current = parent;
+  }
+}
+
+export async function getLocalStatus(cwd: string): Promise<LocalStatus> {
+  cwd = await findLocalStatusDirectory(cwd);
   const gitignorePath = path.join(cwd, '.gitignore');
   let gitignoreExists = false;
   let gitignoreHasFirecrawl = false;

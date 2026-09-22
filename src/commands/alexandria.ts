@@ -183,7 +183,9 @@ export function parseFindToolsRequest(raw: string): Call {
       (key) => !['provider', 'capability', 'options'].includes(key)
     )
   )
-    throw new Error('--request must be a Find Tools request.');
+    throw new Error(
+      '--request accepts only discovery continuations with provider "firecrawl" and capability "find-tools". To execute a selected tool, use firecrawl scrape <provider>/<capability> --options \'<options JSON>\'.'
+    );
   return {
     provider: 'firecrawl',
     capability: 'find-tools',
@@ -203,7 +205,7 @@ export function createFindToolsCommand(): Command {
     )
     .option(
       '--request <json>',
-      'A complete next request returned by Find Tools'
+      'A discovery continuation (firecrawl/find-tools), not a provider execution request'
     )
     .option(
       '--request-id <id>',

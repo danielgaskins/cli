@@ -1286,3 +1286,21 @@ it('sends missing_capability feedback without requestedFunctionality', async () 
   expect(requests).toHaveLength(1);
   expect(requests[0].body.capabilityFeedback).toEqual(capability);
 });
+
+it('explains how to execute a tool rejected by find-tools --request', async () => {
+  const result = await cli([
+    'find-tools',
+    '--request',
+    JSON.stringify({
+      provider: 'fred',
+      capability: 'series/observations',
+      options: {},
+    }),
+  ]);
+  expect(result.code).toBe(1);
+  expect(result.stderr).toContain('only discovery continuations');
+  expect(result.stderr).toContain(
+    'firecrawl scrape <provider>/<capability> --options'
+  );
+  expect(requests).toHaveLength(0);
+});
