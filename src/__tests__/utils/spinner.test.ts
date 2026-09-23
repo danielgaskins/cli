@@ -47,6 +47,9 @@ describe('spinner', () => {
 
     expect(stderrWriteSpy).toHaveBeenNthCalledWith(5, '\r\x1b[K');
     expect(stderrWriteSpy).toHaveBeenNthCalledWith(6, '✓ Done\n');
+
+    vi.advanceTimersByTime(200);
+    expect(stderrWriteSpy).toHaveBeenCalledTimes(6);
   });
 
   it('writes only the final status when stderr is redirected', () => {
@@ -71,5 +74,17 @@ describe('spinner', () => {
 
     expect(stderrWriteSpy).toHaveBeenCalledTimes(1);
     expect(stderrWriteSpy).toHaveBeenCalledWith('✗ Request failed\n');
+  });
+
+  it('uses the latest message as the redirected final status', () => {
+    setInteractive(false);
+    const spinner = createSpinner('Working...');
+
+    spinner.start();
+    spinner.update('Still working...');
+    spinner.succeed();
+
+    expect(stderrWriteSpy).toHaveBeenCalledTimes(1);
+    expect(stderrWriteSpy).toHaveBeenCalledWith('✓ Still working...\n');
   });
 });
